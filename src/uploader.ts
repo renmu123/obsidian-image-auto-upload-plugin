@@ -1,5 +1,4 @@
 import { readFile } from "fs";
-import { fetch, FormData } from "node-fetch-native";
 
 import { PluginSettings } from "./setting";
 import { streamToString, getLastImage, bufferToArrayBuffer } from "./utils";
