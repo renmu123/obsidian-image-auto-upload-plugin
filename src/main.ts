@@ -649,6 +649,7 @@ export default class imageAutoUploadPlugin extends Plugin {
             let sendFiles: Array<string> = [];
             let files = evt.dataTransfer.files;
             Array.from(files).forEach((item, index) => {
+              // TODO: electron 拖拽升级后无该属性
               sendFiles.push(item.path);
             });
             evt.preventDefault();

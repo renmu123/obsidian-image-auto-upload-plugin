@@ -95,3 +95,23 @@ image-auto-upload: true
 - [x] 支持 picgo-core
 - [x] 支持复制系统图片文件
 - [x] 网络图片支持
+
+# 赞赏
+
+如果本项目对你有帮助，请我喝瓶快乐水吧，有助于项目更好维护。  
+爱发电：[https://afdian.com/a/renmu123](https://afdian.com/a/renmu123)  
+你也可以给我的 B 站帐号 [充电](https://space.bilibili.com/10995238)
+
+# 开发
+
+## 安装
+
+`pnpm install`
+
+## 运行
+
+`pnpm run dev`
+
+## 编译
+
+`pnpm run build`

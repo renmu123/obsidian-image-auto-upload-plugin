@@ -4,7 +4,7 @@
     "inlineSourceMap": true,
     "inlineSources": true,
     "module": "ESNext",
-    "target": "es5",
+    "target": "es2023",
     "downlevelIteration": true,
     "allowJs": true,
     "noImplicitAny": true,
@@ -12,5 +12,5 @@
     "importHelpers": true,
     "lib": ["dom", "es5", "scripthost", "es2015", "es2020", "ESNext"]
   },
-  "include": ["**/*.ts"]
+  "include": ["src/**/*.ts", "test/helper.test.ts"]
 }

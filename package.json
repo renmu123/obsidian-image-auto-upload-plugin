@@ -6,7 +6,9 @@
   "main": "main.js",
   "scripts": {
     "dev": "rollup --config rollup.config.js -w",
-    "build": "rollup --config rollup.config.js"
+    "build": "rollup --config rollup.config.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json --composite false",
+    "test": "vitest run"
   },
   "keywords": [
     "obsidian.md",
@@ -21,10 +23,12 @@
     "@rollup/plugin-typescript": "^11.1.6",
     "@types/electron": "^1.6.12",
     "@types/node": "20.12.2",
+    "electron": "^33.1.0",
     "obsidian": "^1.7.2",
     "rollup": "^3.29.5",
     "tslib": "^2.8.1",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
   },
   "dependencies": {
     "fix-path": "^4.0.0",
