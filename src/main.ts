@@ -318,6 +318,7 @@ export default class imageAutoUploadPlugin extends Plugin {
       this.app.workspace.on(
         "file-menu",
         (menu: Menu, file: TFile, source: string, leaf) => {
+          console.log(source);
           if (source === "canvas-menu") return false;
           if (!isAssetTypeAnImage(file.path)) return false;
 
@@ -635,6 +636,10 @@ export default class imageAutoUploadPlugin extends Plugin {
       this.app.workspace.on(
         "editor-drop",
         async (evt: DragEvent, editor: Editor, markdownView: MarkdownView) => {
+          // when ctrl key is pressed, do not upload image, because it is used to set local file
+          if (evt.ctrlKey) {
+            return;
+          }
           const allowUpload = this.helper.getFrontmatterValue(
             "image-auto-upload",
             this.settings.uploadByClipSwitch
@@ -649,7 +654,6 @@ export default class imageAutoUploadPlugin extends Plugin {
             let sendFiles: Array<string> = [];
             let files = evt.dataTransfer.files;
             Array.from(files).forEach((item, index) => {
-              // TODO: electron 拖拽升级后无该属性
               sendFiles.push(item.path);
             });
             evt.preventDefault();
