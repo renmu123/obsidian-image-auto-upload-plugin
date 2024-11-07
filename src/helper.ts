@@ -6,17 +6,19 @@ interface Image {
   name: string;
   source: string;
 }
-// ![](./dsa/aa.png) local image should has ext，support ![](<./dsa/aa.png>)
+// ![](./dsa/aa.png) local image should has ext, support ![](<./dsa/aa.png>), support ![](image.png "alt")
 // ![](https://dasdasda) internet image should not has ext
 const REGEX_FILE =
-  /\!\[(.*?)\]\(<(\S+\.\w+)>\)|\!\[(.*?)\]\((\S+\.\w+)\)|\!\[(.*?)\]\((https?:\/\/.*?)\)/g;
+  /\!\[(.*?)\]\(<(\S+\.\w+)>\)|\!\[(.*?)\]\((\S+\.\w+)(?:\s+"[^"]*")?\)|\!\[(.*?)\]\((https?:\/\/.*?)\)/g;
 const REGEX_WIKI_FILE = /\!\[\[(.*?)(\s*?\|.*?)?\]\]/g;
+
 export default class Helper {
   app: App;
 
   constructor(app: App) {
     this.app = app;
   }
+
   getFrontmatterValue(key: string, defaultValue: any = undefined) {
     const file = this.app.workspace.getActiveFile();
     if (!file) {
@@ -40,6 +42,7 @@ export default class Helper {
       return null;
     }
   }
+
   getValue() {
     const editor = this.getEditor();
     return editor.getValue();
@@ -61,6 +64,7 @@ export default class Helper {
     let value = editor.getValue();
     return this.getImageLink(value);
   }
+
   getImageLink(value: string): Image[] {
     const matches = value.matchAll(REGEX_FILE);
     const WikiMatches = value.matchAll(REGEX_WIKI_FILE);

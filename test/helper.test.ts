@@ -24,6 +24,7 @@ describe("Helper", () => {
     const mockValue = `
       ![local image](./path/to/local-image.png)
       ![local image with angle brackets](<./path/to/local-image.png>)
+      ![local image with title](./path/to/local-image.png "alt")
       ![internet image](https://example.com/internet-image.jpg)
       ![[wiki link|alt text]]
     `;
@@ -42,6 +43,11 @@ describe("Helper", () => {
         name: "local image with angle brackets",
         source:
           "![local image with angle brackets](<./path/to/local-image.png>)",
+      },
+      {
+        path: "./path/to/local-image.png",
+        name: "local image with title",
+        source: '![local image with title](./path/to/local-image.png "alt")',
       },
       {
         path: "https://example.com/internet-image.jpg",
@@ -70,6 +76,7 @@ describe("Helper", () => {
       const mockValue = `
       ![local image](./path/to/local-image.png)
       ![local image with angle brackets](<./path/to/local-image.png>)
+      ![local image with title](./path/to/local-image.png "alt")
       ![internet image](https://example.com/internet-image.jpg)
       ![[wiki link|alt text]]
     `;
@@ -87,6 +94,11 @@ describe("Helper", () => {
           name: "local image with angle brackets",
           source:
             "![local image with angle brackets](<./path/to/local-image.png>)",
+        },
+        {
+          path: "./path/to/local-image.png",
+          name: "local image with title",
+          source: '![local image with title](./path/to/local-image.png "alt")',
         },
         {
           path: "https://example.com/internet-image.jpg",
@@ -165,6 +177,50 @@ describe("Helper", () => {
           path: "https://example.com/internet-image.jpg",
           name: "",
           source: "![](https://example.com/internet-image.jpg)",
+        },
+      ]);
+    });
+
+    it("should handle images with alt text in getImageLink", () => {
+      const mockValue = `
+      ![](./path/to/local-image.png "alt")
+      ![](https://example.com/internet-image.jpg "alt")
+    `;
+
+      const result = helper.getImageLink(mockValue);
+
+      expect(result).toEqual([
+        {
+          path: "./path/to/local-image.png",
+          name: "",
+          source: `![](./path/to/local-image.png "alt")`,
+        },
+        {
+          path: "https://example.com/internet-image.jpg",
+          name: "",
+          source: `![](https://example.com/internet-image.jpg "alt")`,
+        },
+      ]);
+    });
+
+    it("should handle images with alt text empty in getImageLink", () => {
+      const mockValue = `
+      ![](./path/to/local-image.png "")
+      ![](https://example.com/internet-image.jpg "")
+    `;
+
+      const result = helper.getImageLink(mockValue);
+
+      expect(result).toEqual([
+        {
+          path: "./path/to/local-image.png",
+          name: "",
+          source: `![](./path/to/local-image.png "")`,
+        },
+        {
+          path: "https://example.com/internet-image.jpg",
+          name: "",
+          source: `![](https://example.com/internet-image.jpg "")`,
         },
       ]);
     });
