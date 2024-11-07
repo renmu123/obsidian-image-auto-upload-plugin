@@ -161,6 +161,6 @@ fix [issue42](https://github.com/renmu123/obsidian-image-auto-upload-plugin/issu
 
 1. support server mode
 
-# 3.8.0
+# 4.0.0
 
 1. 移除 node-fetch-native 依赖
