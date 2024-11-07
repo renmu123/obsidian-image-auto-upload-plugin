@@ -1,5 +1,5 @@
 import { MarkdownView, App } from "obsidian";
-import { parse } from "path";
+import { parse } from "path-browserify";
 
 interface Image {
   path: string;

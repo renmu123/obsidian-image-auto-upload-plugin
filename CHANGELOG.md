@@ -163,9 +163,16 @@ fix [issue42](https://github.com/renmu123/obsidian-image-auto-upload-plugin/issu
 
 # 4.0.0
 
-多年前的不成熟之作，感谢各位的使用，已经脱离 ob 的开发太久了，希望这个版本不会带来太多 bug
+诈个尸
+
+多年前的不成熟之作，感谢各位的使用，已经脱离 ob 的开发太久了，我和代码已经两不相熟，希望这个版本不会带来太多 bug。
 
 1. 移除 node-fetch-native 依赖
 2. 增加`![](<image>)`类型的解析 [#156](https://github.com/renmu123/obsidian-image-auto-upload-plugin/issues/156)
 3. 增加 md 的 alt 支持 [#143](https://github.com/renmu123/obsidian-image-auto-upload-plugin/issues/143)
 4. 按 ctrl 键进行拖拽上传时，不再调用上传 [#147](https://github.com/renmu123/obsidian-image-auto-upload-plugin/issues/147)
+5. Change plugin name to "Image auto upload"
+
+顺便求个赞助，如果本项目对你有帮助，请我喝瓶快乐水吧，有助于项目更好维护。  
+爱发电：[https://afdian.com/a/renmu123](https://afdian.com/a/renmu123)  
+你也可以给我的 B 站帐号 [充电](https://space.bilibili.com/10995238)

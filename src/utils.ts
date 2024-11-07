@@ -1,4 +1,4 @@
-import { resolve, extname, relative, join, parse, posix } from "path";
+import { extname } from "path-browserify";
 import { Readable } from "stream";
 import { clipboard } from "electron";
 
