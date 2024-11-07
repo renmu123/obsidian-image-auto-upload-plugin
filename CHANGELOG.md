@@ -166,3 +166,4 @@ fix [issue42](https://github.com/renmu123/obsidian-image-auto-upload-plugin/issu
 多年前的不成熟之作，感谢各位的使用，已经脱离 ob 的开发太久了，希望这个版本不会带来太多 bug
 
 1. 移除 node-fetch-native 依赖
+2. 增加`![](<image>)`类型的解析 [#156](https://github.com/renmu123/obsidian-image-auto-upload-plugin/issues/156)

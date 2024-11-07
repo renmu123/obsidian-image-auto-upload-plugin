@@ -23,6 +23,7 @@ describe("Helper", () => {
   it("should return all file URLs including local and internet images", () => {
     const mockValue = `
       ![local image](./path/to/local-image.png)
+      ![local image with angle brackets](<./path/to/local-image.png>)
       ![internet image](https://example.com/internet-image.jpg)
       ![[wiki link|alt text]]
     `;
@@ -35,6 +36,12 @@ describe("Helper", () => {
         path: "./path/to/local-image.png",
         name: "local image",
         source: "![local image](./path/to/local-image.png)",
+      },
+      {
+        path: "./path/to/local-image.png",
+        name: "local image with angle brackets",
+        source:
+          "![local image with angle brackets](<./path/to/local-image.png>)",
       },
       {
         path: "https://example.com/internet-image.jpg",
@@ -62,6 +69,7 @@ describe("Helper", () => {
     it("should return all file URLs including local and internet images from getImageLink", () => {
       const mockValue = `
       ![local image](./path/to/local-image.png)
+      ![local image with angle brackets](<./path/to/local-image.png>)
       ![internet image](https://example.com/internet-image.jpg)
       ![[wiki link|alt text]]
     `;
@@ -73,6 +81,12 @@ describe("Helper", () => {
           path: "./path/to/local-image.png",
           name: "local image",
           source: "![local image](./path/to/local-image.png)",
+        },
+        {
+          path: "./path/to/local-image.png",
+          name: "local image with angle brackets",
+          source:
+            "![local image with angle brackets](<./path/to/local-image.png>)",
         },
         {
           path: "https://example.com/internet-image.jpg",

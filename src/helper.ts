@@ -6,9 +6,10 @@ interface Image {
   name: string;
   source: string;
 }
-// ![](./dsa/aa.png) local image should has ext
+// ![](./dsa/aa.png) local image should has ext，support ![](<./dsa/aa.png>)
 // ![](https://dasdasda) internet image should not has ext
-const REGEX_FILE = /\!\[(.*?)\]\((\S+\.\w+)\)|\!\[(.*?)\]\((https?:\/\/.*?)\)/g;
+const REGEX_FILE =
+  /\!\[(.*?)\]\(<(\S+\.\w+)>\)|\!\[(.*?)\]\((\S+\.\w+)\)|\!\[(.*?)\]\((https?:\/\/.*?)\)/g;
 const REGEX_WIKI_FILE = /\!\[\[(.*?)(\s*?\|.*?)?\]\]/g;
 export default class Helper {
   app: App;
