@@ -298,6 +298,7 @@ export default class imageAutoUploadPlugin extends Plugin {
     try {
       const path = join(folderPath, `${name}.${type.ext}`);
 
+      // @ts-ignore
       writeFileSync(path, buffer);
       return {
         ok: true,
@@ -318,7 +319,6 @@ export default class imageAutoUploadPlugin extends Plugin {
       this.app.workspace.on(
         "file-menu",
         (menu: Menu, file: TFile, source: string, leaf) => {
-          console.log(source);
           if (source === "canvas-menu") return false;
           if (!isAssetTypeAnImage(file.path)) return false;
 

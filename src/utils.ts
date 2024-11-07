@@ -44,6 +44,7 @@ export async function streamToString(stream: Readable) {
     chunks.push(Buffer.from(chunk));
   }
 
+  // @ts-ignore
   return Buffer.concat(chunks).toString("utf-8");
 }
 

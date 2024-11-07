@@ -1,6 +1,6 @@
 {
   "id": "obsidian-image-auto-upload-plugin",
-  "name": "Image auto upload Plugin",
+  "name": "Image auto upload",
   "version": "3.8.0",
   "minAppVersion": "0.10.7",
   "description": "This plugin uploads images from your clipboard by PicGo",

@@ -168,4 +168,4 @@ fix [issue42](https://github.com/renmu123/obsidian-image-auto-upload-plugin/issu
 1. 移除 node-fetch-native 依赖
 2. 增加`![](<image>)`类型的解析 [#156](https://github.com/renmu123/obsidian-image-auto-upload-plugin/issues/156)
 3. 增加 md 的 alt 支持 [#143](https://github.com/renmu123/obsidian-image-auto-upload-plugin/issues/143)
-4. 按 ctrl 键进行拖拽上传时，不再调用上传
+4. 按 ctrl 键进行拖拽上传时，不再调用上传 [#147](https://github.com/renmu123/obsidian-image-auto-upload-plugin/issues/147)
