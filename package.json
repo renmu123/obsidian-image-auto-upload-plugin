@@ -6,7 +6,7 @@
   "main": "main.js",
   "scripts": {
     "dev": "rollup --config rollup.config.js -w",
-    "build": "rollup --config rollup.config.js",
+    "build": "pnpm run typecheck && pnpm run test && rollup --config rollup.config.js",
     "typecheck": "tsc --noEmit -p tsconfig.json --composite false",
     "test": "vitest run"
   },
@@ -22,9 +22,10 @@
     "@rollup/plugin-node-resolve": "^15.3.0",
     "@rollup/plugin-typescript": "^11.1.6",
     "@types/electron": "^1.6.12",
-    "@types/node": "20.12.2",
+    "@types/node": "20.17.6",
     "@types/path-browserify": "^1.0.3",
     "electron": "^33.1.0",
+    "jsdom": "^25.0.1",
     "obsidian": "^1.7.2",
     "path-browserify": "^1.0.1",
     "rollup": "^3.29.5",

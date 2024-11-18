@@ -9,6 +9,8 @@ This plugin can help you to auto upload image by
 
 **You should restart obsidian after updating the plugin.**
 
+**I have not test in Mac**
+
 # Start
 
 1. install the [picgo](https://github.com/Molunerfinn/PicGo) and config it

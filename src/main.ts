@@ -566,7 +566,6 @@ export default class imageAutoUploadPlugin extends Plugin {
       this.app.workspace.on(
         "editor-paste",
         (evt: ClipboardEvent, editor: Editor, markdownView: MarkdownView) => {
-          console.log("editor-paste", evt.clipboardData.files);
           const allowUpload = this.helper.getFrontmatterValue(
             "image-auto-upload",
             this.settings.uploadByClipSwitch

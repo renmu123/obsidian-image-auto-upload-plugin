@@ -3,6 +3,8 @@
 这是一个支持 PicGo、PicList、PicGo-Core 上传图片到图床的工具
 **更新插件后记得重启一下 Obsidian**
 
+**未在 Mac 进行过测试**
+
 # 开始
 
 1. 安装 PicGo 工具，并进行配置，配置参考[官网](https://github.com/Molunerfinn/PicGo)
