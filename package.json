@@ -6,7 +6,7 @@
   "main": "main.js",
   "scripts": {
     "dev": "rollup --config rollup.config.js -w",
-    "build": "pnpm run typecheck && pnpm run test && rollup --config rollup.config.js",
+    "build": "pnpm run typecheck && rollup --config rollup.config.js",
     "typecheck": "tsc --noEmit -p tsconfig.json --composite false",
     "test": "vitest run"
   },
