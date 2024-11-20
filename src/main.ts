@@ -10,6 +10,7 @@ import {
   Notice,
   addIcon,
   MarkdownFileInfo,
+  Platform,
 } from "obsidian";
 import { resolve, join, basename, dirname } from "path-browserify";
 import fixPath from "fix-path";
@@ -61,7 +62,7 @@ export default class imageAutoUploadPlugin extends Plugin {
       this.uploader = this.picGoUploader;
     } else if (this.settings.uploader === "PicGo-Core") {
       this.uploader = this.picGoCoreUploader;
-      if (this.settings.fixPath) {
+      if (this.settings.fixPath && (Platform.isMacOS || Platform.isLinux)) {
         fixPath();
       }
     } else {

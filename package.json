@@ -17,21 +17,21 @@
   "author": "renmu",
   "license": "MIT",
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^24.1.0",
+    "@rollup/plugin-commonjs": "^28.0.1",
     "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^15.3.0",
-    "@rollup/plugin-typescript": "^11.1.6",
+    "@rollup/plugin-typescript": "^12.1.1",
     "@types/electron": "^1.6.12",
     "@types/node": "20.17.6",
     "@types/path-browserify": "^1.0.3",
-    "electron": "^33.1.0",
+    "electron": "^33.2.0",
     "jsdom": "^25.0.1",
     "obsidian": "^1.7.2",
     "path-browserify": "^1.0.1",
-    "rollup": "^3.29.5",
+    "rollup": "^4.27.3",
     "tslib": "^2.8.1",
     "typescript": "^5.6.3",
-    "vitest": "^2.1.4"
+    "vitest": "^2.1.5"
   },
   "dependencies": {
     "fix-path": "^4.0.0",

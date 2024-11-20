@@ -4,10 +4,8 @@ import { describe, it, expect } from "vitest";
 import {
   isAnImage,
   isAssetTypeAnImage,
-  getOS,
   streamToString,
   getUrlAsset,
-  isCopyImageFile,
   getLastImage,
   arrayToObject,
   bufferToArrayBuffer,
@@ -26,11 +24,6 @@ describe("utils tests", () => {
     expect(isAssetTypeAnImage("document.txt")).toBe(false);
   });
 
-  it("should get the OS", () => {
-    const os = getOS();
-    expect(["Windows", "MacOS", "Linux", "Unknown OS"]).toContain(os);
-  });
-
   it("should convert stream to string", async () => {
     const stream = Readable.from(["hello", " ", "world"]);
     const result = await streamToString(stream);
@@ -42,22 +35,6 @@ describe("utils tests", () => {
     const asset = getUrlAsset(url);
     expect(asset).toBe("image.png");
   });
-
-  // it("should check if copied file is an image", () => {
-  //   // clipboard.write({ text: "image.png" });
-  //   const result = isCopyImageFile();
-  //   expect(result).toBe(true);
-  // });
-
-  // it("should get the last image from a list", () => {
-  //   const list = [
-  //     "http://example.com/image1.png",
-  //     "http://example.com/image2.png",
-  //     "http://example.com/document.txt",
-  //   ];
-  //   const lastImage = getLastImage(list);
-  //   expect(lastImage).toBe("http://example.com/image2.png");
-  // });
 
   it("should convert array to object", () => {
     const arr = [

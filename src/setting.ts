@@ -1,7 +1,6 @@
-import { App, PluginSettingTab, Setting, Notice } from "obsidian";
+import { App, PluginSettingTab, Setting, Notice, Platform } from "obsidian";
 import imageAutoUploadPlugin from "./main";
 import { t } from "./lang/helpers";
-import { getOS } from "./utils";
 
 export interface PluginSettings {
   uploadByClipSwitch: boolean;
@@ -46,8 +45,6 @@ export class SettingTab extends PluginSettingTab {
 
   display(): void {
     let { containerEl } = this;
-
-    const os = getOS();
 
     containerEl.empty();
     containerEl.createEl("h2", { text: t("Plugin Settings") });
@@ -142,7 +139,7 @@ export class SettingTab extends PluginSettingTab {
             })
         );
 
-      if (os !== "Windows") {
+      if (Platform.isMacOS || Platform.isLinux) {
         new Setting(containerEl)
           .setName(t("fixPath"))
           .setDesc(t("fixPathWarning"))
