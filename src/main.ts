@@ -10,7 +10,6 @@ import {
   Notice,
   addIcon,
   MarkdownFileInfo,
-  Platform,
 } from "obsidian";
 import { resolve, relative, join, basename, dirname } from "path-browserify";
 import { existsSync, unlink } from "fs";
@@ -92,22 +91,20 @@ export default class imageAutoUploadPlugin extends Plugin {
         return false;
       },
     });
-    if (!Platform.isMobile) {
-      this.addCommand({
-        id: "Download all images",
-        name: "Download all images",
-        checkCallback: (checking: boolean) => {
-          let leaf = this.app.workspace.activeLeaf;
-          if (leaf) {
-            if (!checking) {
-              downloadAllImageFiles(this);
-            }
-            return true;
+    this.addCommand({
+      id: "Download all images",
+      name: "Download all images",
+      checkCallback: (checking: boolean) => {
+        let leaf = this.app.workspace.activeLeaf;
+        if (leaf) {
+          if (!checking) {
+            downloadAllImageFiles(this);
           }
-          return false;
-        },
-      });
-    }
+          return true;
+        }
+        return false;
+      },
+    });
 
     this.setupPasteHandler();
     this.registerFileMenu();
