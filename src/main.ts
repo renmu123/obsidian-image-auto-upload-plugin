@@ -52,14 +52,6 @@ export default class imageAutoUploadPlugin extends Plugin {
   async onload() {
     await this.loadSettings();
 
-    // const testFile = this.app.vault.getFileByPath("未命名/gxs3svjs7u8.webp");
-    // console.log(testFile);
-    // console.log(
-    //   testFile,
-    //   111,
-    //   this.app.fileManager.generateMarkdownLink(testFile, "测试2/asd")
-    // );
-
     this.helper = new Helper(this.app);
     this.picGoUploader = new PicGoUploader(this.settings, this);
     this.picGoDeleter = new PicGoDeleter(this);
@@ -494,12 +486,12 @@ export default class imageAutoUploadPlugin extends Plugin {
             "image-auto-upload",
             this.settings.uploadByClipSwitch
           );
-          let files = evt.dataTransfer.files;
 
           if (!allowUpload) {
             return;
           }
 
+          let files = evt.dataTransfer.files;
           if (files.length !== 0 && files[0].type.startsWith("image")) {
             let sendFiles: Array<string> = [];
             let files = evt.dataTransfer.files;
