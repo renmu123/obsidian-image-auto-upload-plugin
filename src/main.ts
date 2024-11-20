@@ -232,7 +232,12 @@ export default class imageAutoUploadPlugin extends Plugin {
         imageArray.push({
           source: file.source,
           name: name,
-          path: normalizePath(relative(abstractActiveFolder, response.path)),
+          path: normalizePath(
+            relative(
+              normalizePath(abstractActiveFolder),
+              normalizePath(response.path)
+            )
+          ),
         });
       }
     }
@@ -267,8 +272,9 @@ export default class imageAutoUploadPlugin extends Plugin {
       this.app.vault.adapter as FileSystemAdapter
     ).getBasePath();
 
-    // @ts-ignore
-    const assetFolder: string = this.app.vault.config.attachmentFolderPath;
+    const assetFolder: string =
+      // @ts-ignore
+      this.app.vault.config.attachmentFolderPath ?? "/";
     const activeFile = this.app.vault.getAbstractFileByPath(
       this.app.workspace.getActiveFile().path
     );
@@ -303,7 +309,7 @@ export default class imageAutoUploadPlugin extends Plugin {
     const buffer = Buffer.from(response.arrayBuffer);
 
     try {
-      const path = join(folderPath, `${name}.${type.ext}`);
+      const path = normalizePath(join(folderPath, `${name}.${type.ext}`));
 
       // @ts-ignore
       writeFileSync(path, buffer);
@@ -485,10 +491,12 @@ export default class imageAutoUploadPlugin extends Plugin {
           if (existsSync(filePath)) {
             const path = normalizePath(
               relative(
-                basePath,
-                resolve(
-                  join(basePath, dirname(activeFile.path)),
-                  decodeURI(encodedUri)
+                normalizePath(basePath),
+                normalizePath(
+                  resolve(
+                    join(basePath, dirname(activeFile.path)),
+                    decodeURI(encodedUri)
+                  )
                 )
               )
             );
