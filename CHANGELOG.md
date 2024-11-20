@@ -1,3 +1,7 @@
+# 4.1.0
+
+1. 删除文件尊重设置
+
 # 4.0.1(2024.11.20)
 
 1. 修复无法下载图片的 bug [#83](https://github.com/renmu123/obsidian-image-auto-upload-plugin/issues/83)

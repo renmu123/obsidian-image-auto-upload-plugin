@@ -56,4 +56,5 @@ export default {
     "File has been changedd, download failure",
   "Warning: upload files is different of reciver files from api":
     "Warning: upload files num is different of reciver files from api",
+  upload: "Upload",
 };

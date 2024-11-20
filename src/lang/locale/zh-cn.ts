@@ -50,4 +50,5 @@ export default {
   "File has been changedd, download failure": "当前文件已变更，下载失败",
   "Warning: upload files is different of reciver files from api":
     "警告：上传的文件与接口返回的文件数量不一致",
+  upload: "上传",
 };

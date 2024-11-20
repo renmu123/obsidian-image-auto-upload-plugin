@@ -11,8 +11,7 @@ import {
   addIcon,
   MarkdownFileInfo,
 } from "obsidian";
-import { resolve, relative, join, basename, dirname } from "path-browserify";
-import { existsSync, unlink } from "fs";
+import { resolve, join, basename, dirname } from "path-browserify";
 import fixPath from "fix-path";
 
 import { isAssetTypeAnImage, arrayToObject } from "./utils";
@@ -28,6 +27,7 @@ interface Image {
   path: string;
   name: string;
   source: string;
+  file?: TFile | null;
 }
 
 export default class imageAutoUploadPlugin extends Plugin {
@@ -51,6 +51,14 @@ export default class imageAutoUploadPlugin extends Plugin {
 
   async onload() {
     await this.loadSettings();
+
+    // const testFile = this.app.vault.getFileByPath("未命名/gxs3svjs7u8.webp");
+    // console.log(testFile);
+    // console.log(
+    //   testFile,
+    //   111,
+    //   this.app.fileManager.generateMarkdownLink(testFile, "测试2/asd")
+    // );
 
     this.helper = new Helper(this.app);
     this.picGoUploader = new PicGoUploader(this.settings, this);
@@ -81,7 +89,7 @@ export default class imageAutoUploadPlugin extends Plugin {
       id: "Upload all images",
       name: "Upload all images",
       checkCallback: (checking: boolean) => {
-        let leaf = this.app.workspace.activeLeaf;
+        let leaf = this.app.workspace.getActiveViewOfType(MarkdownView);
         if (leaf) {
           if (!checking) {
             this.uploadAllFile();
@@ -95,7 +103,7 @@ export default class imageAutoUploadPlugin extends Plugin {
       id: "Download all images",
       name: "Download all images",
       checkCallback: (checking: boolean) => {
-        let leaf = this.app.workspace.activeLeaf;
+        let leaf = this.app.workspace.getActiveViewOfType(MarkdownView);
         if (leaf) {
           if (!checking) {
             downloadAllImageFiles(this);
@@ -184,7 +192,7 @@ export default class imageAutoUploadPlugin extends Plugin {
 
           menu.addItem((item: MenuItem) => {
             item
-              .setTitle("Upload")
+              .setTitle(t("upload"))
               .setIcon("upload")
               .onClick(() => {
                 if (!(file instanceof TFile)) {
@@ -221,6 +229,7 @@ export default class imageAutoUploadPlugin extends Plugin {
             path: abstractImageFile,
             name: imageName,
             source: match.source,
+            file: file,
           });
         }
       }
@@ -248,7 +257,7 @@ export default class imageAutoUploadPlugin extends Plugin {
         if (this.settings.deleteSource) {
           imageList.map(image => {
             if (!image.path.startsWith("http")) {
-              unlink(image.path, () => {});
+              this.app.fileManager.trashFile(image.file);
             }
           });
         }
@@ -288,12 +297,6 @@ export default class imageAutoUploadPlugin extends Plugin {
 
     return imageList;
   }
-  getFile(fileName: string, fileMap: any) {
-    if (!fileMap) {
-      fileMap = arrayToObject(this.app.vault.getFiles(), "name");
-    }
-    return fileMap[fileName];
-  }
   // uploda all file
   uploadAllFile() {
     let content = this.helper.getValue();
@@ -304,66 +307,51 @@ export default class imageAutoUploadPlugin extends Plugin {
     const activeFile = this.app.workspace.getActiveFile();
     const fileMap = arrayToObject(this.app.vault.getFiles(), "name");
     const filePathMap = arrayToObject(this.app.vault.getFiles(), "path");
-    let imageList: Image[] = [];
+    let imageList: (Image & { file: TFile | null })[] = [];
     const fileArray = this.filterFile(this.helper.getAllFiles());
 
     for (const match of fileArray) {
       const imageName = match.name;
-      const encodedUri = match.path;
+      const uri = decodeURI(match.path);
 
-      if (encodedUri.startsWith("http")) {
+      if (uri.startsWith("http")) {
         imageList.push({
           path: match.path,
           name: imageName,
           source: match.source,
+          file: null,
         });
       } else {
-        const fileName = basename(decodeURI(encodedUri));
-        let file;
-        // 绝对路径
-        if (filePathMap[decodeURI(encodedUri)]) {
-          file = filePathMap[decodeURI(encodedUri)];
+        const fileName = basename(uri);
+        let file: TFile | undefined | null;
+        // 优先匹配绝对路径
+        if (filePathMap[uri]) {
+          file = filePathMap[uri];
         }
 
         // 相对路径
-        if (
-          (!file && decodeURI(encodedUri).startsWith("./")) ||
-          decodeURI(encodedUri).startsWith("../")
-        ) {
-          const filePath = resolve(
-            join(basePath, dirname(activeFile.path)),
-            decodeURI(encodedUri)
+        if ((!file && uri.startsWith("./")) || uri.startsWith("../")) {
+          const filePath = normalizePath(
+            resolve(dirname(activeFile.path), uri)
           );
 
-          if (existsSync(filePath)) {
-            const path = normalizePath(
-              relative(
-                normalizePath(basePath),
-                normalizePath(
-                  resolve(
-                    join(basePath, dirname(activeFile.path)),
-                    decodeURI(encodedUri)
-                  )
-                )
-              )
-            );
-
-            file = filePathMap[path];
-          }
+          file = filePathMap[filePath];
         }
+
         // 尽可能短路径
         if (!file) {
-          file = this.getFile(fileName, fileMap);
+          file = fileMap[fileName];
         }
 
         if (file) {
-          const abstractImageFile = join(basePath, file.path);
+          const abstractImageFile = normalizePath(join(basePath, file.path));
 
           if (isAssetTypeAnImage(abstractImageFile)) {
             imageList.push({
               path: abstractImageFile,
               name: imageName,
               source: match.source,
+              file: file,
             });
           }
         }
@@ -374,7 +362,7 @@ export default class imageAutoUploadPlugin extends Plugin {
       new Notice(t("Can not find image file"));
       return;
     } else {
-      new Notice(`共找到${imageList.length}个图像文件，开始上传`);
+      new Notice(`Have found ${imageList.length} images`);
     }
 
     this.uploader.uploadFiles(imageList.map(item => item.path)).then(res => {
@@ -405,8 +393,8 @@ export default class imageAutoUploadPlugin extends Plugin {
 
         if (this.settings.deleteSource) {
           imageList.map(image => {
-            if (!image.path.startsWith("http")) {
-              unlink(image.path, () => {});
+            if (image.file) {
+              this.app.fileManager.trashFile(image.file);
             }
           });
         }
