@@ -1,6 +1,5 @@
 import { extname } from "path-browserify";
 import { Readable } from "stream";
-import { clipboard } from "electron";
 
 export interface IStringKeyMap<T> {
   [key: string]: T;

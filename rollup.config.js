@@ -10,6 +10,7 @@ export default {
     sourcemap: "inline",
     format: "cjs",
     exports: "default",
+    inlineDynamicImports: true,
   },
   external: ["obsidian", "electron"],
   plugins: [typescript(), nodeResolve({ browser: false }), commonjs(), json()],

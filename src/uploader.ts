@@ -1,10 +1,9 @@
-import { readFile } from "fs";
-
 import { PluginSettings } from "./setting";
 import { streamToString, getLastImage, bufferToArrayBuffer } from "./utils";
-import { exec } from "child_process";
-import { requestUrl } from "obsidian";
-import imageAutoUploadPlugin from "./main";
+import { requestUrl, Platform, Notice } from "obsidian";
+
+import type imageAutoUploadPlugin from "./main";
+import type { Image } from "./types";
 
 export interface PicGoResponse {
   msg: string;
@@ -21,33 +20,55 @@ export class PicGoUploader {
     this.plugin = plugin;
   }
 
-  async uploadFiles(fileList: Array<string>): Promise<any> {
+  async uploadFiles(fileList: Array<Image | string>): Promise<any> {
     let response: any;
     let data: PicGoResponse;
 
     if (this.settings.remoteServerMode) {
       const files = [];
       for (let i = 0; i < fileList.length; i++) {
-        const file = fileList[i];
-        const buffer: Buffer = await new Promise((resolve, reject) => {
-          readFile(file, (err, data) => {
-            if (err) {
-              reject(err);
-            }
-            resolve(data);
+        if (typeof fileList[i] === "string") {
+          const { readFile } = require("fs");
+          const file = fileList[i] as string;
+
+          const buffer: Buffer = await new Promise((resolve, reject) => {
+            readFile(file, (err: any, data: any) => {
+              if (err) {
+                reject(err);
+              }
+              resolve(data);
+            });
           });
-        });
-        const arrayBuffer = bufferToArrayBuffer(buffer);
-        files.push(new File([arrayBuffer], file));
+          const arrayBuffer = bufferToArrayBuffer(buffer);
+          files.push(new File([arrayBuffer], file));
+        } else {
+          const image = fileList[i] as Image;
+          if (!image.file) continue;
+          const arrayBuffer = await this.plugin.app.vault.adapter.readBinary(
+            image.file.path
+          );
+          files.push(new File([arrayBuffer], image.name));
+        }
       }
       response = await this.uploadFileByData(files);
       data = await response.json();
     } else {
+      const list = fileList.map(item => {
+        if (typeof item === "string") {
+          return item;
+        } else {
+          return item.path;
+        }
+      });
+      if (Platform.isMobileApp) {
+        new Notice("Mobile App must use remote server mode.");
+        return;
+      }
       response = await requestUrl({
         url: this.settings.uploadServer,
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ list: fileList }),
+        body: JSON.stringify({ list: list }),
       });
       data = await response.json;
     }
@@ -64,7 +85,7 @@ export class PicGoUploader {
     return data;
   }
 
-  async uploadFileByData(fileList: FileList | File[]): Promise<any> {
+  private async uploadFileByData(fileList: FileList | File[]): Promise<any> {
     const form = new FormData();
     for (let i = 0; i < fileList.length; i++) {
       form.append("list", fileList[i]);
@@ -88,6 +109,10 @@ export class PicGoUploader {
       res = await this.uploadFileByData(fileList);
       data = await res.json();
     } else {
+      if (Platform.isMobileApp) {
+        new Notice("Mobile App must use remote server mode.");
+        return;
+      }
       res = await requestUrl({
         url: this.settings.uploadServer,
         method: "POST",
@@ -131,12 +156,23 @@ export class PicGoCoreUploader {
     this.plugin = plugin;
   }
 
-  async uploadFiles(fileList: Array<String>): Promise<any> {
-    const length = fileList.length;
+  async uploadFiles(fileList: Array<Image> | Array<string>): Promise<any> {
+    if (Platform.isMobileApp) {
+      new Notice("Mobile App must use remote server mode.");
+      return;
+    }
+
+    const list = fileList.map(item => {
+      if (typeof item === "string") {
+        return item;
+      } else {
+        return item.path;
+      }
+    });
+
+    const length = list.length;
     let cli = this.settings.picgoCorePath || "picgo";
-    let command = `${cli} upload ${fileList
-      .map(item => `"${item}"`)
-      .join(" ")}`;
+    let command = `${cli} upload ${list.map(item => `"${item}"`).join(" ")}`;
 
     const res = await this.exec(command);
     const splitList = res.split("\n");
@@ -162,6 +198,11 @@ export class PicGoCoreUploader {
 
   // PicGo-Core 上传处理
   async uploadFileByClipboard() {
+    if (Platform.isMobileApp) {
+      new Notice("Mobile App must use remote server mode.");
+      return;
+    }
+
     const res = await this.uploadByClip();
     const splitList = res.split("\n");
     const lastImage = getLastImage(splitList);
@@ -185,7 +226,7 @@ export class PicGoCoreUploader {
   }
 
   // PicGo-Core的剪切上传反馈
-  async uploadByClip() {
+  private async uploadByClip() {
     let command;
     if (this.settings.picgoCorePath) {
       command = `${this.settings.picgoCorePath} upload`;
@@ -198,13 +239,14 @@ export class PicGoCoreUploader {
     return res;
   }
 
-  async exec(command: string) {
+  private async exec(command: string) {
+    const { exec } = require("child_process");
     let { stdout } = await exec(command);
     const res = await streamToString(stdout);
     return res;
   }
 
-  async spawnChild() {
+  private async spawnChild() {
     const { spawn } = require("child_process");
     const child = spawn("picgo", ["upload"], {
       shell: true,

@@ -13,7 +13,6 @@ import {
   Platform,
 } from "obsidian";
 import { resolve, join, basename, dirname } from "path-browserify";
-import fixPath from "fix-path";
 
 import { isAssetTypeAnImage, arrayToObject } from "./utils";
 import { downloadAllImageFiles } from "./download";
@@ -24,12 +23,7 @@ import { t } from "./lang/helpers";
 
 import { SettingTab, PluginSettings, DEFAULT_SETTINGS } from "./setting";
 
-interface Image {
-  path: string;
-  name: string;
-  source: string;
-  file?: TFile | null;
-}
+import type { Image } from "./types";
 
 export default class imageAutoUploadPlugin extends Plugin {
   settings: PluginSettings;
@@ -63,7 +57,8 @@ export default class imageAutoUploadPlugin extends Plugin {
     } else if (this.settings.uploader === "PicGo-Core") {
       this.uploader = this.picGoCoreUploader;
       if (this.settings.fixPath && (Platform.isMacOS || Platform.isLinux)) {
-        fixPath();
+        const fixPathModule = await import("fix-path");
+        fixPathModule.default();
       }
     } else {
       new Notice("unknown uploader");
@@ -233,7 +228,7 @@ export default class imageAutoUploadPlugin extends Plugin {
       return;
     }
 
-    this.uploader.uploadFiles(imageList.map(item => item.path)).then(res => {
+    this.uploader.uploadFiles(imageList).then(res => {
       if (res.success) {
         let uploadUrlList = res.result;
         imageList.map(item => {
@@ -358,7 +353,7 @@ export default class imageAutoUploadPlugin extends Plugin {
       new Notice(`Have found ${imageList.length} images`);
     }
 
-    this.uploader.uploadFiles(imageList.map(item => item.path)).then(res => {
+    this.uploader.uploadFiles(imageList).then(res => {
       if (res.success) {
         let uploadUrlList = res.result;
 
@@ -427,26 +422,24 @@ export default class imageAutoUploadPlugin extends Plugin {
               );
 
             if (imageList.length !== 0) {
-              this.uploader
-                .uploadFiles(imageList.map(item => item.path))
-                .then(res => {
-                  let value = this.helper.getValue();
-                  if (res.success) {
-                    let uploadUrlList = res.result;
-                    imageList.map(item => {
-                      const uploadImage = uploadUrlList.shift();
-                      let name = this.handleName(item.name);
+              this.uploader.uploadFiles(imageList).then(res => {
+                let value = this.helper.getValue();
+                if (res.success) {
+                  let uploadUrlList = res.result;
+                  imageList.map(item => {
+                    const uploadImage = uploadUrlList.shift();
+                    let name = this.handleName(item.name);
 
-                      value = value.replaceAll(
-                        item.source,
-                        `![${name}](${uploadImage})`
-                      );
-                    });
-                    this.helper.setValue(value);
-                  } else {
-                    new Notice("Upload error");
-                  }
-                });
+                    value = value.replaceAll(
+                      item.source,
+                      `![${name}](${uploadImage})`
+                    );
+                  });
+                  this.helper.setValue(value);
+                } else {
+                  new Notice("Upload error");
+                }
+              });
             }
           }
 

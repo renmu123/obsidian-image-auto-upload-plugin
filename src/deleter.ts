@@ -1,5 +1,5 @@
 import { IStringKeyMap } from "./utils";
-import { App, requestUrl } from "obsidian";
+import { requestUrl } from "obsidian";
 import imageAutoUploadPlugin from "./main";
 
 export class PicGoDeleter {
