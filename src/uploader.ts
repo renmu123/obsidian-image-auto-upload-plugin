@@ -2,8 +2,8 @@ import { readFile } from "fs";
 
 import { PluginSettings } from "./setting";
 import { streamToString, getLastImage, bufferToArrayBuffer } from "./utils";
-import { exec, spawnSync, spawn } from "child_process";
-import { Notice, requestUrl } from "obsidian";
+import { exec } from "child_process";
+import { requestUrl } from "obsidian";
 import imageAutoUploadPlugin from "./main";
 
 export interface PicGoResponse {

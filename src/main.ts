@@ -9,35 +9,26 @@ import {
   normalizePath,
   Notice,
   addIcon,
-  requestUrl,
   MarkdownFileInfo,
 } from "obsidian";
-
-import {
-  resolve,
-  relative,
-  join,
-  parse,
-  basename,
-  dirname,
-} from "path-browserify";
-import { existsSync, mkdirSync, writeFileSync, unlink } from "fs";
-
+import { resolve, relative, join, basename, dirname } from "path-browserify";
+import { existsSync, unlink } from "fs";
 import fixPath from "fix-path";
-import imageType from "image-type";
 
-import {
-  isAssetTypeAnImage,
-  isAnImage,
-  getUrlAsset,
-  arrayToObject,
-} from "./utils";
+import { isAssetTypeAnImage, arrayToObject } from "./utils";
+import { downloadAllImageFiles } from "./download";
 import { PicGoUploader, PicGoCoreUploader } from "./uploader";
 import { PicGoDeleter } from "./deleter";
 import Helper from "./helper";
 import { t } from "./lang/helpers";
 
 import { SettingTab, PluginSettings, DEFAULT_SETTINGS } from "./setting";
+
+declare module "obsidian" {
+  interface App {
+    isMobile: boolean;
+  }
+}
 
 interface Image {
   path: string;
@@ -106,20 +97,22 @@ export default class imageAutoUploadPlugin extends Plugin {
         return false;
       },
     });
-    this.addCommand({
-      id: "Download all images",
-      name: "Download all images",
-      checkCallback: (checking: boolean) => {
-        let leaf = this.app.workspace.activeLeaf;
-        if (leaf) {
-          if (!checking) {
-            this.downloadAllImageFiles();
+    if (!this.app.isMobile) {
+      this.addCommand({
+        id: "Download all images",
+        name: "Download all images",
+        checkCallback: (checking: boolean) => {
+          let leaf = this.app.workspace.activeLeaf;
+          if (leaf) {
+            if (!checking) {
+              downloadAllImageFiles(this);
+            }
+            return true;
           }
-          return true;
-        }
-        return false;
-      },
-    });
+          return false;
+        },
+      });
+    }
 
     this.setupPasteHandler();
     this.registerFileMenu();
@@ -188,144 +181,6 @@ export default class imageAutoUploadPlugin extends Plugin {
         })
     );
   };
-
-  async downloadAllImageFiles() {
-    const activeFile = this.app.workspace.getActiveFile();
-    const folderPath = this.getFileAssetPath();
-    const fileArray = this.helper.getAllFiles();
-    if (!existsSync(folderPath)) {
-      mkdirSync(folderPath);
-    }
-
-    let imageArray = [];
-    const nameSet = new Set();
-    for (const file of fileArray) {
-      if (!file.path.startsWith("http")) {
-        continue;
-      }
-
-      const url = file.path;
-      const asset = getUrlAsset(url);
-      let name = decodeURI(parse(asset).name).replaceAll(
-        /[\\\\/:*?\"<>|]/g,
-        "-"
-      );
-
-      // 如果文件名已存在，则用随机值替换，不对文件后缀进行判断
-      if (existsSync(join(folderPath))) {
-        name = (Math.random() + 1).toString(36).substr(2, 5);
-      }
-      if (nameSet.has(name)) {
-        name = `${name}-${(Math.random() + 1).toString(36).substr(2, 5)}`;
-      }
-      nameSet.add(name);
-
-      const response = await this.download(url, folderPath, name);
-      if (response.ok) {
-        const activeFolder = normalizePath(
-          this.app.workspace.getActiveFile().parent.path
-        );
-        const abstractActiveFolder = (
-          this.app.vault.adapter as FileSystemAdapter
-        ).getFullPath(activeFolder);
-
-        imageArray.push({
-          source: file.source,
-          name: name,
-          path: normalizePath(
-            relative(
-              normalizePath(abstractActiveFolder),
-              normalizePath(response.path)
-            )
-          ),
-        });
-      }
-    }
-
-    let value = this.helper.getValue();
-    imageArray.map(image => {
-      let name = this.handleName(image.name);
-
-      value = value.replace(
-        image.source,
-        `![${name}](${encodeURI(image.path)})`
-      );
-    });
-
-    const currentFile = this.app.workspace.getActiveFile();
-    if (activeFile.path !== currentFile.path) {
-      new Notice(t("File has been changedd, download failure"));
-      return;
-    }
-    this.helper.setValue(value);
-
-    new Notice(
-      `all: ${fileArray.length}\nsuccess: ${imageArray.length}\nfailed: ${
-        fileArray.length - imageArray.length
-      }`
-    );
-  }
-
-  // 获取当前文件所属的附件文件夹
-  getFileAssetPath() {
-    const basePath = (
-      this.app.vault.adapter as FileSystemAdapter
-    ).getBasePath();
-
-    const assetFolder: string =
-      // @ts-ignore
-      this.app.vault.config.attachmentFolderPath ?? "/";
-    const activeFile = this.app.vault.getAbstractFileByPath(
-      this.app.workspace.getActiveFile().path
-    );
-
-    // 当前文件夹下的子文件夹
-    if (assetFolder.startsWith("./")) {
-      const activeFolder = decodeURI(resolve(basePath, activeFile.parent.path));
-      return join(activeFolder, assetFolder);
-    } else {
-      // 根文件夹
-      return join(basePath, assetFolder);
-    }
-  }
-
-  async download(url: string, folderPath: string, name: string) {
-    const response = await requestUrl({ url });
-    const type = await imageType(new Uint8Array(response.arrayBuffer));
-
-    if (response.status !== 200) {
-      return {
-        ok: false,
-        msg: "error",
-      };
-    }
-    if (!type) {
-      return {
-        ok: false,
-        msg: "error",
-      };
-    }
-
-    const buffer = Buffer.from(response.arrayBuffer);
-
-    try {
-      const path = normalizePath(join(folderPath, `${name}.${type.ext}`));
-
-      // @ts-ignore
-      writeFileSync(path, buffer);
-      return {
-        ok: true,
-        msg: "ok",
-        path: path,
-        type,
-      };
-    } catch (err) {
-      return {
-        ok: false,
-        msg: err,
-      };
-    }
-  }
 
   registerFileMenu() {
     this.registerEvent(
