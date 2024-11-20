@@ -104,3 +104,7 @@ export function bufferToArrayBuffer(buffer: Buffer) {
   }
   return arrayBuffer;
 }
+
+export function uuid() {
+  return Math.random().toString(36).slice(2);
+}

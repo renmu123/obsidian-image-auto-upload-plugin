@@ -10,6 +10,7 @@ import {
   Notice,
   addIcon,
   MarkdownFileInfo,
+  Platform,
 } from "obsidian";
 import { resolve, relative, join, basename, dirname } from "path-browserify";
 import { existsSync, unlink } from "fs";
@@ -23,12 +24,6 @@ import Helper from "./helper";
 import { t } from "./lang/helpers";
 
 import { SettingTab, PluginSettings, DEFAULT_SETTINGS } from "./setting";
-
-declare module "obsidian" {
-  interface App {
-    isMobile: boolean;
-  }
-}
 
 interface Image {
   path: string;
@@ -97,7 +92,7 @@ export default class imageAutoUploadPlugin extends Plugin {
         return false;
       },
     });
-    if (!this.app.isMobile) {
+    if (!Platform.isMobile) {
       this.addCommand({
         id: "Download all images",
         name: "Download all images",

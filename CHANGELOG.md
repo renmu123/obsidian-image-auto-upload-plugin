@@ -1,8 +1,7 @@
 # 4.0.1
 
-## 修复
-
 1. 修复无法下载图片的 bug [#83](https://github.com/renmu123/obsidian-image-auto-upload-plugin/issues/83)
+2. 重构下载模块代码以便之后对 mobile 的支持
 
 # 4.0.0(2024.11.18)
 

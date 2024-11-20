@@ -1,0 +1,40 @@
+name: 🐛 Bug Report
+description: Create a report to help us improve
+body:
+  - type: checkboxes
+    id: initial-checklist
+    attributes:
+      label: I have tried the following
+      options:
+        - label: Tried using the [latest version](https://github.com/renmu123/obsidian-image-auto-upload-plugin)
+          required: true
+        - label: Read the documentation and searched the issues
+          required: true
+  - type: input
+    id: system-info
+    attributes:
+      label: System Information
+      description: Please provide information about your system. For example, operating system, Obsidian, and plugin version.
+    validations:
+      required: true
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: How did you reproduce the issue? Please describe the steps you took from starting the application to the occurrence of the issue. If necessary, you can attach screenshots or screen recordings.
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: What should have happened?
+    validations:
+      required: true
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+    validations:
+      required: true

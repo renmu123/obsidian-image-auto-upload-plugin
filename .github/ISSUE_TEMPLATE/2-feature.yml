@@ -1,0 +1,19 @@
+name: ✨ Feature Request
+description: Submit a new feature request
+body:
+  - type: checkboxes
+    id: initial-checklist
+    attributes:
+      label: I have tried the following
+      options:
+        - label: Tried using the [latest version](https://github.com/renmu123/obsidian-image-auto-upload-plugin)
+          required: true
+        - label: Checked if someone has already requested a similar feature
+          required: true
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: Description
+      description: Clearly and concisely describe the content you want to add or improve. If necessary, you can attach screenshots or screen recordings.
+    validations:
+      required: true

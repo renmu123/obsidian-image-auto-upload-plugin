@@ -1,23 +1,25 @@
-import { FileSystemAdapter, normalizePath, Notice, requestUrl } from "obsidian";
+import { normalizePath, Notice, requestUrl } from "obsidian";
 
-import { existsSync, mkdirSync, writeFileSync } from "fs";
-import { relative, join, parse, resolve } from "path-browserify";
+import { relative, join, parse } from "path-browserify";
 import imageType from "image-type";
 
-import { getUrlAsset } from "./utils";
+import { getUrlAsset, uuid } from "./utils";
 import { t } from "./lang/helpers";
 import type imageAutoUploadPlugin from "./main";
 
 export async function downloadAllImageFiles(plugin: imageAutoUploadPlugin) {
   const activeFile = plugin.app.workspace.getActiveFile();
-  const folderPath = getFileAssetPath(plugin);
+  const folderPath = await plugin.app.fileManager.getAvailablePathForAttachment(
+    ""
+  );
+
   const fileArray = plugin.helper.getAllFiles();
-  if (!existsSync(folderPath)) {
-    mkdirSync(folderPath);
+
+  if (!(await plugin.app.vault.adapter.exists(folderPath))) {
+    await plugin.app.vault.adapter.mkdir(folderPath);
   }
 
   let imageArray = [];
-  const nameSet = new Set();
   for (const file of fileArray) {
     if (!file.path.startsWith("http")) {
       continue;
@@ -27,32 +29,15 @@ export async function downloadAllImageFiles(plugin: imageAutoUploadPlugin) {
     const asset = getUrlAsset(url);
     let name = decodeURI(parse(asset).name).replaceAll(/[\\\\/:*?\"<>|]/g, "-");
 
-    // 如果文件名已存在，则用随机值替换，不对文件后缀进行判断
-    if (existsSync(join(folderPath))) {
-      name = (Math.random() + 1).toString(36).substr(2, 5);
-    }
-    if (nameSet.has(name)) {
-      name = `${name}-${(Math.random() + 1).toString(36).substr(2, 5)}`;
-    }
-    nameSet.add(name);
-
-    const response = await download(url, folderPath, name);
+    const response = await download(plugin, url, folderPath, name);
     if (response.ok) {
-      const activeFolder = normalizePath(
-        plugin.app.workspace.getActiveFile().parent.path
-      );
-      const abstractActiveFolder = (
-        plugin.app.vault.adapter as FileSystemAdapter
-      ).getFullPath(activeFolder);
+      const activeFolder = plugin.app.workspace.getActiveFile().parent.path;
 
       imageArray.push({
         source: file.source,
         name: name,
         path: normalizePath(
-          relative(
-            normalizePath(abstractActiveFolder),
-            normalizePath(response.path)
-          )
+          relative(normalizePath(activeFolder), normalizePath(response.path))
         ),
       });
     }
@@ -79,9 +64,13 @@ export async function downloadAllImageFiles(plugin: imageAutoUploadPlugin) {
   );
 }
 
-async function download(url: string, folderPath: string, name: string) {
+async function download(
+  plugin: imageAutoUploadPlugin,
+  url: string,
+  folderPath: string,
+  name: string
+) {
   const response = await requestUrl({ url });
-  const type = await imageType(new Uint8Array(response.arrayBuffer));
 
   if (response.status !== 200) {
     return {
@@ -89,6 +78,8 @@ async function download(url: string, folderPath: string, name: string) {
       msg: "error",
     };
   }
+
+  const type = await imageType(new Uint8Array(response.arrayBuffer));
   if (!type) {
     return {
       ok: false,
@@ -96,13 +87,15 @@ async function download(url: string, folderPath: string, name: string) {
     };
   }
 
-  const buffer = Buffer.from(response.arrayBuffer);
-
   try {
-    const path = normalizePath(join(folderPath, `${name}.${type.ext}`));
+    let path = normalizePath(join(folderPath, `${name}.${type.ext}`));
 
-    // @ts-ignore
-    writeFileSync(path, buffer);
+    // 如果文件名已存在，则用随机值替换，不对文件后缀进行判断
+    if (await plugin.app.vault.adapter.exists(path)) {
+      path = normalizePath(join(folderPath, `${uuid()}.${type.ext}`));
+    }
+
+    plugin.app.vault.adapter.writeBinary(path, response.arrayBuffer);
     return {
       ok: true,
       msg: "ok",
@@ -114,28 +107,5 @@ async function download(url: string, folderPath: string, name: string) {
       ok: false,
       msg: err,
     };
-  }
-}
-
-// 获取当前文件所属的附件文件夹
-function getFileAssetPath(plugin: imageAutoUploadPlugin) {
-  const basePath = (
-    plugin.app.vault.adapter as FileSystemAdapter
-  ).getBasePath();
-
-  const assetFolder: string =
-    // @ts-ignore
-    plugin.app.vault.config.attachmentFolderPath ?? "/";
-  const activeFile = plugin.app.vault.getAbstractFileByPath(
-    plugin.app.workspace.getActiveFile().path
-  );
-
-  // 当前文件夹下的子文件夹
-  if (assetFolder.startsWith("./")) {
-    const activeFolder = decodeURI(resolve(basePath, activeFile.parent.path));
-    return join(activeFolder, assetFolder);
-  } else {
-    // 根文件夹
-    return join(basePath, assetFolder);
   }
 }
