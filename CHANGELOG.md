@@ -1,10 +1,10 @@
 # 4.1.0
 
-1. 删除文件尊重设置
-2. 修复远程模式无法跨域
-3. 修复上传器设置无法即时生效
+1. trash respect ob setting
+2. fix remote mod for cors
+3. fix change uploader should restart plugin
 4. **remove fix-path support**
-5. use timestamp name for server mode
+5. use timestamp name for remote mode
 6. **mobile support**
 
 # 4.0.1(2024.11.20)
