@@ -11,7 +11,6 @@ export interface PluginSettings {
   picgoCorePath: string;
   workOnNetWork: boolean;
   newWorkBlackDomains: string;
-  fixPath: boolean;
   applyImage: boolean;
   deleteSource: boolean;
   imageDesc: "origin" | "none" | "removeDefault";
@@ -27,7 +26,6 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   imageSizeSuffix: "",
   picgoCorePath: "",
   workOnNetWork: false,
-  fixPath: false,
   applyImage: true,
   newWorkBlackDomains: "",
   deleteSource: false,
@@ -138,20 +136,6 @@ export class SettingTab extends PluginSettingTab {
               await this.plugin.saveSettings();
             })
         );
-
-      if (Platform.isMacOS || Platform.isLinux) {
-        new Setting(containerEl)
-          .setName(t("fixPath"))
-          .setDesc(t("fixPathWarning"))
-          .addToggle(toggle =>
-            toggle
-              .setValue(this.plugin.settings.fixPath)
-              .onChange(async value => {
-                this.plugin.settings.fixPath = value;
-                await this.plugin.saveSettings();
-              })
-          );
-      }
     }
 
     // image desc setting

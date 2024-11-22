@@ -1,7 +1,6 @@
 import {
   MarkdownView,
   Plugin,
-  FileSystemAdapter,
   Editor,
   Menu,
   MenuItem,
@@ -10,9 +9,8 @@ import {
   Notice,
   addIcon,
   MarkdownFileInfo,
-  Platform,
 } from "obsidian";
-import { resolve, join, basename, dirname } from "path-browserify";
+import { resolve, basename, dirname } from "path-browserify";
 
 import { isAssetTypeAnImage, arrayToObject } from "./utils";
 import { downloadAllImageFiles } from "./download";
@@ -56,10 +54,6 @@ export default class imageAutoUploadPlugin extends Plugin {
       this.uploader = this.picGoUploader;
     } else if (this.settings.uploader === "PicGo-Core") {
       this.uploader = this.picGoCoreUploader;
-      if (this.settings.fixPath && (Platform.isMacOS || Platform.isLinux)) {
-        // const fixPathModule = await import("fix-path");
-        // fixPathModule.default();
-      }
     } else {
       new Notice("unknown uploader");
     }

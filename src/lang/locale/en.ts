@@ -28,9 +28,6 @@ export default {
   "Work on network": "Work on network",
   "Work on network Description":
     "Allow upload network image by 'Upload all' command.\n Or when you paste, md standard image link in your clipboard will be auto upload.",
-  fixPath: "fixPath",
-  fixPathWarning:
-    "This option is used to fix PicGo-core upload failures on Linux and Mac. It modifies the PATH variable within Obsidian. If Obsidian encounters any bugs, turn off the option, try again! ",
   "Upload when clipboard has image and text together":
     "Upload when clipboard has image and text together",
   "When you copy, some application like Excel will image and text to clipboard, you can upload or not.":
