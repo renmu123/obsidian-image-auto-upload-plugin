@@ -3,7 +3,9 @@
 1. 删除文件尊重设置
 2. 修复远程模式无法跨域
 3. 修复上传器设置无法即时生效
-4. **移除 fix-path 的支持**
+4. **remove fix-path support**
+5. use timestamp name for server mode
+6. **mobile support**
 
 # 4.0.1(2024.11.20)
 

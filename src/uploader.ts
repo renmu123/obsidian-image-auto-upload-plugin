@@ -1,6 +1,15 @@
+import { join, extname } from "path-browserify";
+
 import { PluginSettings } from "./setting";
 import { streamToString, getLastImage, bufferToArrayBuffer } from "./utils";
-import { requestUrl, Platform, Notice, normalizePath } from "obsidian";
+import { payloadGenerator } from "./payloadGenerator";
+import {
+  requestUrl,
+  Platform,
+  Notice,
+  normalizePath,
+  FileSystemAdapter,
+} from "obsidian";
 
 import type imageAutoUploadPlugin from "./main";
 import type { Image } from "./types";
@@ -41,6 +50,7 @@ export class PicGoUploader {
           const arrayBuffer = bufferToArrayBuffer(buffer);
           files.push(new File([arrayBuffer], file));
         } else {
+          const timestamp = new Date().getTime();
           const image = fileList[i] as Image;
 
           if (!image.file) continue;
@@ -48,18 +58,23 @@ export class PicGoUploader {
             image.file.path
           );
 
-          files.push(new File([arrayBuffer], image.name || "image"));
+          files.push(
+            new File([arrayBuffer], timestamp + extname(image.file.path))
+          );
         }
       }
       response = await this.uploadFileByData(files);
-      data = await response.json();
+      data = await response.json;
     } else {
-      // TODO: path不是绝对路径，需要修改
+      const basePath = (
+        this.plugin.app.vault.adapter as FileSystemAdapter
+      ).getBasePath();
+
       const list = fileList.map(item => {
         if (typeof item === "string") {
           return item;
         } else {
-          return item.path;
+          return normalizePath(join(basePath, item.path));
         }
       });
       if (Platform.isMobileApp) {
@@ -88,16 +103,29 @@ export class PicGoUploader {
   }
 
   private async uploadFileByData(fileList: FileList | File[]): Promise<any> {
-    const form = new FormData();
+    const payload_data: {
+      [key: string]: (string | Blob | ArrayBuffer | File)[];
+    } = {
+      list: [],
+    };
+
     for (let i = 0; i < fileList.length; i++) {
-      form.append("list", fileList[i]);
+      const file = fileList[i];
+      payload_data["list"].push(file);
     }
 
+    const [request_body, boundary_string] = await payloadGenerator(
+      payload_data
+    );
+
     const options = {
-      method: "post",
-      body: form,
+      method: "POST",
+      url: this.settings.uploadServer,
+      contentType: `multipart/form-data; boundary=----${boundary_string}`,
+      body: request_body,
     };
-    const response = await fetch(this.settings.uploadServer, options);
+    const response = await requestUrl(options);
+
     return response;
   }
 
@@ -106,8 +134,16 @@ export class PicGoUploader {
     let res: any;
 
     if (this.settings.remoteServerMode) {
-      res = await this.uploadFileByData(fileList);
-      data = await res.json();
+      const files = [];
+      for (let i = 0; i < fileList.length; i++) {
+        const timestamp = new Date().getTime();
+
+        const file = fileList[i];
+        const arrayBuffer = await file.arrayBuffer();
+        files.push(new File([arrayBuffer], timestamp + ".png"));
+      }
+      res = await this.uploadFileByData(files);
+      data = await res.json;
     } else {
       if (Platform.isMobileApp) {
         new Notice("Mobile App must use remote server mode.");
@@ -162,12 +198,16 @@ export class PicGoCoreUploader {
       return;
     }
 
+    const basePath = (
+      this.plugin.app.vault.adapter as FileSystemAdapter
+    ).getBasePath();
+
     // TODO: path不是绝对路径，需要修改
     const list = fileList.map(item => {
       if (typeof item === "string") {
         return item;
       } else {
-        return item.path;
+        return normalizePath(join(basePath, item.path));
       }
     });
 
