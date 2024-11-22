@@ -57,8 +57,8 @@ export default class imageAutoUploadPlugin extends Plugin {
     } else if (this.settings.uploader === "PicGo-Core") {
       this.uploader = this.picGoCoreUploader;
       if (this.settings.fixPath && (Platform.isMacOS || Platform.isLinux)) {
-        const fixPathModule = await import("fix-path");
-        fixPathModule.default();
+        // const fixPathModule = await import("fix-path");
+        // fixPathModule.default();
       }
     } else {
       new Notice("unknown uploader");
@@ -197,9 +197,9 @@ export default class imageAutoUploadPlugin extends Plugin {
   fileMenuUpload(file: TFile) {
     let content = this.helper.getValue();
 
-    const basePath = (
-      this.app.vault.adapter as FileSystemAdapter
-    ).getBasePath();
+    // const basePath = (
+    //   this.app.vault.adapter as FileSystemAdapter
+    // ).getBasePath();
     let imageList: Image[] = [];
     const fileArray = this.helper.getAllFiles();
 
@@ -210,11 +210,11 @@ export default class imageAutoUploadPlugin extends Plugin {
       const fileName = basename(decodeURI(encodedUri));
 
       if (file && file.name === fileName) {
-        const abstractImageFile = join(basePath, file.path);
+        // const abstractImageFile = join(basePath, file.path);
 
-        if (isAssetTypeAnImage(abstractImageFile)) {
+        if (isAssetTypeAnImage(file.path)) {
           imageList.push({
-            path: abstractImageFile,
+            path: file.path,
             name: imageName,
             source: match.source,
             file: file,
@@ -289,9 +289,9 @@ export default class imageAutoUploadPlugin extends Plugin {
   uploadAllFile() {
     let content = this.helper.getValue();
 
-    const basePath = (
-      this.app.vault.adapter as FileSystemAdapter
-    ).getBasePath();
+    // const basePath = (
+    //   this.app.vault.adapter as FileSystemAdapter
+    // ).getBasePath();
     const activeFile = this.app.workspace.getActiveFile();
     const fileMap = arrayToObject(this.app.vault.getFiles(), "name");
     const filePathMap = arrayToObject(this.app.vault.getFiles(), "path");
@@ -332,11 +332,11 @@ export default class imageAutoUploadPlugin extends Plugin {
         }
 
         if (file) {
-          const abstractImageFile = normalizePath(join(basePath, file.path));
+          // const abstractImageFile = normalizePath(file.path);
 
-          if (isAssetTypeAnImage(abstractImageFile)) {
+          if (isAssetTypeAnImage(file.path)) {
             imageList.push({
-              path: abstractImageFile,
+              path: normalizePath(file.path),
               name: imageName,
               source: match.source,
               file: file,

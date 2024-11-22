@@ -6,6 +6,6 @@
   "description": "This plugin uploads images from your clipboard by PicGo",
   "author": "renmu",
   "authorUrl": "https://github.com/renmu123/obsidian-image-auto-upload-plugin",
-  "isDesktopOnly": true,
+  "isDesktopOnly": false,
   "fundingUrl": "https://afdian.com/a/renmu123"
 }

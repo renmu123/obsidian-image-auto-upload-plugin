@@ -77,6 +77,15 @@ export function bufferToArrayBuffer(buffer: Buffer) {
   return arrayBuffer;
 }
 
+export function arrayBufferToBuffer(arrayBuffer: ArrayBuffer) {
+  const buffer = Buffer.alloc(arrayBuffer.byteLength);
+  const view = new Uint8Array(arrayBuffer);
+  for (let i = 0; i < buffer.length; ++i) {
+    buffer[i] = view[i];
+  }
+  return buffer;
+}
+
 export function uuid() {
   return Math.random().toString(36).slice(2);
 }

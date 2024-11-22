@@ -1,6 +1,6 @@
 import { PluginSettings } from "./setting";
 import { streamToString, getLastImage, bufferToArrayBuffer } from "./utils";
-import { requestUrl, Platform, Notice } from "obsidian";
+import { requestUrl, Platform, Notice, normalizePath } from "obsidian";
 
 import type imageAutoUploadPlugin from "./main";
 import type { Image } from "./types";
@@ -23,7 +23,6 @@ export class PicGoUploader {
   async uploadFiles(fileList: Array<Image | string>): Promise<any> {
     let response: any;
     let data: PicGoResponse;
-
     if (this.settings.remoteServerMode) {
       const files = [];
       for (let i = 0; i < fileList.length; i++) {
@@ -43,16 +42,19 @@ export class PicGoUploader {
           files.push(new File([arrayBuffer], file));
         } else {
           const image = fileList[i] as Image;
+
           if (!image.file) continue;
           const arrayBuffer = await this.plugin.app.vault.adapter.readBinary(
             image.file.path
           );
-          files.push(new File([arrayBuffer], image.name));
+
+          files.push(new File([arrayBuffer], image.name || "image"));
         }
       }
       response = await this.uploadFileByData(files);
       data = await response.json();
     } else {
+      // TODO: path不是绝对路径，需要修改
       const list = fileList.map(item => {
         if (typeof item === "string") {
           return item;
@@ -95,9 +97,7 @@ export class PicGoUploader {
       method: "post",
       body: form,
     };
-
     const response = await fetch(this.settings.uploadServer, options);
-    console.log("response", response);
     return response;
   }
 
@@ -162,6 +162,7 @@ export class PicGoCoreUploader {
       return;
     }
 
+    // TODO: path不是绝对路径，需要修改
     const list = fileList.map(item => {
       if (typeof item === "string") {
         return item;
