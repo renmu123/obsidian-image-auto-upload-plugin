@@ -33,7 +33,13 @@ export class UploaderManager {
       throw new Error("Mobile App must use remote server mode.");
     }
 
-    return this.uploader.upload(fileList);
+    const res = await this.uploader.upload(fileList);
+    if (!res.success) {
+      new Notice(res.msg || "Upload Failed");
+      throw new Error(res.msg || "Upload Failed");
+    }
+
+    return res;
   }
   async uploadByClipboard(fileList?: FileList) {
     if (Platform.isMobileApp && !this.plugin.settings.remoteServerMode) {
@@ -41,7 +47,13 @@ export class UploaderManager {
       throw new Error("Mobile App must use remote server mode.");
     }
 
-    return this.uploader.uploadByClipboard(fileList);
+    const res = await this.uploader.uploadByClipboard(fileList);
+    if (!res.success) {
+      new Notice(res.msg || "Upload Failed");
+      throw new Error(res.msg || "Upload Failed");
+    }
+
+    return res;
   }
 }
 

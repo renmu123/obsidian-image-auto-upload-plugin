@@ -354,11 +354,6 @@ export default class imageAutoUploadPlugin extends Plugin {
     }
 
     this.upload(imageList).then(res => {
-      if (!res.success) {
-        new Notice("Upload error");
-        return;
-      }
-
       let uploadUrlList = res.result;
       if (imageList.length !== uploadUrlList.length) {
         new Notice(
@@ -407,11 +402,6 @@ export default class imageAutoUploadPlugin extends Plugin {
 
             if (imageList.length !== 0) {
               this.upload(imageList).then(res => {
-                if (!res.success) {
-                  new Notice("Upload error");
-                  return;
-                }
-
                 let uploadUrlList = res.result;
                 this.replaceImage(imageList, uploadUrlList);
               });
