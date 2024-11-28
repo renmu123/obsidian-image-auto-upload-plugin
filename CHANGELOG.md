@@ -1,3 +1,7 @@
+# 4.1.0(2024.11.28)
+
+1. 修复 ob1.7.5 版本后拖拽时无法上传的 bug [#160](https://github.com/renmu123/obsidian-image-auto-upload-plugin/issues/160)
+
 # 4.0.1(2024.11.20)
 
 1. 修复无法下载图片的 bug [#83](https://github.com/renmu123/obsidian-image-auto-upload-plugin/issues/83)
