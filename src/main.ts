@@ -453,7 +453,13 @@ export default class imageAutoUploadPlugin extends Plugin {
             let sendFiles: Array<string> = [];
             let files = evt.dataTransfer.files;
             Array.from(files).forEach((item, index) => {
-              sendFiles.push(item.path);
+              if (item.path) {
+                sendFiles.push(item.path);
+              } else {
+                const { webUtils } = require("electron");
+                const path = webUtils.getPathForFile(item);
+                sendFiles.push(path);
+              }
             });
             evt.preventDefault();
 

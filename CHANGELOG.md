@@ -1,4 +1,4 @@
-# 4.1.0
+# 5.0.0
 
 1. trash respect ob setting
 2. fix remote mod for cors
@@ -6,6 +6,10 @@
 4. **remove fix-path support**
 5. use timestamp name for remote mode
 6. **mobile support**
+
+# 4.1.0(2024.11.28)
+
+1. 修复 ob1.7.5 版本后拖拽时无法上传的 bug [#160](https://github.com/renmu123/obsidian-image-auto-upload-plugin/issues/160)
 
 # 4.0.1(2024.11.20)
 
