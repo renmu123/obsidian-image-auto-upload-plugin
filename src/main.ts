@@ -415,14 +415,12 @@ export default class imageAutoUploadPlugin extends Plugin {
               async (editor: Editor, pasteId: string) => {
                 let res: any;
                 res = await this.uploadByClipboard(evt.clipboardData.files);
-
-                if (res.code !== 0) {
+                // 上传后的响应信息中没有code属性, 虽然上传成功,但是会返回错误的上传结果, 使用success属性来判断
+                if (res.success === false) {
                   this.handleFailedUpload(editor, pasteId, res.msg);
                   return;
                 }
-                const url = res.data;
-
-                return url;
+                return res.result;
               },
               evt.clipboardData
             ).catch();

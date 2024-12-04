@@ -69,6 +69,9 @@ export default class PicGoUploader implements Uploader {
       const list = fileList.map(item => {
         if (typeof item === "string") {
           return item;
+        } else if(item.path && item.path.startsWith('http')) {
+          // 如果path的请求为http或https时,不应该和本地路径合并,直接返回网络url即可
+          return item.path;
         } else {
           return normalizePath(join(basePath, item.path));
         }
@@ -141,7 +144,6 @@ export default class PicGoUploader implements Uploader {
     response: Awaited<ReturnType<typeof requestUrl>>
   ): Promise<Response> {
     const data = (await response.json) as PicGoResponse;
-
     if (response.status !== 200) {
       console.error(response, data);
       return {
