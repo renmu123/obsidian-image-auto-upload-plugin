@@ -239,6 +239,10 @@ export default class imageAutoUploadPlugin extends Plugin {
     const imageList: Image[] = [];
 
     for (const match of fileArray) {
+      if (!match || !match.path) {
+        continue;
+      }
+
       if (match.path.startsWith("http")) {
         if (this.settings.workOnNetWork) {
           if (
