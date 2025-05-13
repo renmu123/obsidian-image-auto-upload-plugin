@@ -7,7 +7,7 @@ interface Image {
   source: string;
 }
 // ![](./dsa/aa.png) local image should has ext, support ![](<./dsa/aa.png>), support ![](image.png "alt")
-// ![](https://dasdasda) internet image should not has ext
+// ![](https://dasdasda) internet image should not have ext
 const REGEX_FILE =
   /\!\[(.*?)\]\(<(\S+\.\w+)>\)|\!\[(.*?)\]\((\S+\.\w+)(?:\s+"[^"]*")?\)|\!\[(.*?)\]\((https?:\/\/.*?)\)/g;
 const REGEX_WIKI_FILE = /\!\[\[(.*?)(\s*?\|.*?)?\]\]/g;

@@ -54,4 +54,6 @@ export default {
   "Warning: upload files is different of reciver files from api":
     "Warning: upload files num is different of reciver files from api",
   upload: "Upload",
+  "Upload Image File": "Upload Image File",
+  "Upload Image Files": "Upload Image Files",
 };

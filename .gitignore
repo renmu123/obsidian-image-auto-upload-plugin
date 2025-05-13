@@ -8,6 +8,7 @@ node_modules
 # build
 *.js.map
 main.js
+package-lock.json
 
 # ignore
 data.json

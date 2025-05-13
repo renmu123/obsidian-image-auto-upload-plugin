@@ -9,7 +9,10 @@ import {
   Notice,
   addIcon,
   MarkdownFileInfo,
+  parseLinktext,
+  getLinkpath,
 } from "obsidian";
+import * as pathlib from "path";
 import { resolve, basename, dirname } from "path-browserify";
 
 import { isAssetTypeAnImage, arrayToObject } from "./utils";
@@ -83,6 +86,7 @@ export default class imageAutoUploadPlugin extends Plugin {
     });
     this.setupPasteHandler();
     this.registerFileMenu();
+    this.registerFilesMenu();
     this.registerSelection();
   }
 
@@ -180,18 +184,29 @@ export default class imageAutoUploadPlugin extends Plugin {
         (menu: Menu, file: TFile, source: string, leaf) => {
           if (source === "canvas-menu") return false;
           if (!isAssetTypeAnImage(file.path)) return false;
-
-          menu.addItem((item: MenuItem) => {
-            item
-              .setTitle(t("upload"))
-              .setIcon("upload")
-              .onClick(() => {
-                if (!(file instanceof TFile)) {
-                  return false;
-                }
-                this.fileMenuUpload(file);
-              });
-          });
+          if (source === "file-explorer-context-menu"){
+            menu.addItem((item: MenuItem) => {
+              item
+                .setTitle(t("Upload Image File"))
+                .setIcon("upload")
+                .onClick(async () => {
+                  await this.uploadImageTFiles([file]);
+                });
+            });
+          }
+          else {
+            menu.addItem((item: MenuItem) => {
+              item
+                .setTitle(t("upload"))
+                .setIcon("upload")
+                .onClick(() => {
+                  if (!(file instanceof TFile)) {
+                    return false;
+                  }
+                  this.fileMenuUpload(file);
+                });
+            });
+          }
         }
       )
     );
@@ -235,6 +250,223 @@ export default class imageAutoUploadPlugin extends Plugin {
     });
   }
 
+  registerFilesMenu(){
+    this.registerEvent(
+      this.app.workspace.on(
+        "files-menu",
+        (menu: Menu, files: TFile[], source: string, leaf) => {
+          if (source !== "file-explorer-context-menu") return false;
+          menu.addItem((item: MenuItem) => {
+            item
+              .setTitle(t("Upload Image Files"))
+              .setIcon("upload")
+              .onClick(async () => {
+                var imageFiles = files.filter(file => ((file instanceof TFile) && isAssetTypeAnImage(file.path)));
+                if (files.length !== imageFiles.length){
+                  console.log(`Omitting ${files.length - imageFiles.length} non-image files`);
+                }
+                await this.uploadImageTFiles(imageFiles);
+              });
+          });
+        }
+      )
+    );
+  }
+
+  async uploadImageTFiles(imageFiles: TFile[]){
+    imageFiles = imageFiles.filter(file => isAssetTypeAnImage(file.path));
+    var historyMessage = `Uploading ${imageFiles.length} image file(s)...`;
+    const progressNotice = new Notice(historyMessage, 0);
+    var progressMessage = "";
+    var total: number = 0;
+    var count: number = 0;
+    
+
+    // 1. find all relevant links in vault.
+    // Let's say, in source file (usually markdown), there is a link `![displayName](targetFilePath)` or `[[targetFileWikilink|displayName]]`.
+    // 1.1 prepare all resolved links in vault.
+    // this.app.metadataCache.resolvedLinks: Record<string, Record<string, number>>, meaning: {sourceFilePath: {targetFilePath: nLinks}}
+    // reversedLinks: Record<string, Record<string, number>>, meaning: {targetFilePath: {sourceFilePath: nLinks}}
+    // reversedLinksOfImageFiles: Record<string, Record<string, number>>, meaning: {imageFilePath: {sourceFilePath: nLinks}}
+    const reversedLinksOfImageFiles: Record<string, Record<string, number>> = {};
+    for (const imageFile of imageFiles){
+      reversedLinksOfImageFiles[imageFile.path] = {};
+    }
+    Object.keys(this.app.metadataCache.resolvedLinks).forEach((key) => {total += 1});
+    count = 0; 
+    for (const [sourceFilePath, links] of Object.entries(this.app.metadataCache.resolvedLinks)) {
+      count += 1;
+      progressMessage = `Resolving links in vault (${count}/${total})...`;
+      progressNotice.setMessage(historyMessage + "\n" + progressMessage);
+      for (const [targetFilePath, nLinks] of Object.entries(links)) {
+        if (!reversedLinksOfImageFiles[targetFilePath]) { // ignore not selected files
+          continue;
+        }
+        if (!reversedLinksOfImageFiles[targetFilePath][sourceFilePath])
+          reversedLinksOfImageFiles[targetFilePath][sourceFilePath] = nLinks;
+        else 
+          reversedLinksOfImageFiles[targetFilePath][sourceFilePath] += nLinks;
+      }
+    }
+    historyMessage += `\nResolving links in vault (${count}/${total})... Done`;
+    progressNotice.setMessage(historyMessage);
+    
+    // 1.2 find all relevant image links in all files
+    const imageLinksInSrcFiles: Record<string, {targetFilePath: string, displayName: string, start: number, end: number}[]> = {};
+    // start and end here are offsets in src file content.
+    total = imageFiles.length;
+    count = 0;
+    for (const imageFile of imageFiles) {
+      count += 1;
+      progressMessage = `Finding relevant notes for ${imageFile.name} (${count}/${total})...`;
+      progressNotice.setMessage(historyMessage+ "\n" + progressMessage);
+      for(const sourceFilePath in reversedLinksOfImageFiles[imageFile.path]){
+        const sourceFile = this.app.vault.getAbstractFileByPath(sourceFilePath);
+        if (!(sourceFile instanceof TFile)) continue;
+        const srcFileContent = await this.app.vault.read(sourceFile);
+        const srcFileMetaDataCache = this.app.metadataCache.getFileCache(sourceFile);
+        if (!srcFileMetaDataCache || !srcFileMetaDataCache.sections) continue;
+        const sections = srcFileMetaDataCache.sections;
+        const allowedCodeType = ["ad-quote"]; // TODO: add an option in settings to define this list.
+        const REGEX_MD_LINK = /\!\[(.*?)\]\(<(\S+\.\w+)>\)|\!\[(.*?)\]\((\S+\.\w+)(?:(\s+"[^"]*"|\s*\|.*)*)?\)|\!\[(.*?)\]\((https?:\/\/.*?)\)/g;
+        const REGEX_WIKI_LINK = /\!\[\[(.*?)(\s*\|.*)?\]\]/g;
+        for (const section of sections) {
+          const sectionContent = srcFileContent.substring(section.position.start.offset, section.position.end.offset);
+          if (section.type == "code") {
+            var codeBlockAllowed = false;
+            for (const codeType of allowedCodeType) {
+              if (sectionContent.startsWith('\`\`\`'+codeType)) {
+                codeBlockAllowed = true;
+                break;
+              }
+            }
+            if (!codeBlockAllowed) continue;
+          }
+          const mdMatches = sectionContent.matchAll(REGEX_MD_LINK);
+          const wikiMatches = sectionContent.matchAll(REGEX_WIKI_LINK);
+          const imageLinksInSrcFile = imageLinksInSrcFiles[sourceFilePath] || [];
+          mdMatches.forEach(match => {
+            if (match.index === undefined) return;
+            const displayName = match[1] || match[3] || match[5]; 
+            if (match[6]) return; // ignore network image
+            const encodedURI = match[2] || match[4];
+            const decodedURI = decodeURI(encodedURI); // Actually, I'm not sure if this can handle all cases.
+            if (pathlib.isAbsolute(decodedURI)) return;
+            // decodedURI should be a relative path. Ignore absolute path.
+            const targetFilePath = pathlib.normalize(pathlib.join(pathlib.dirname(sourceFilePath), decodedURI));
+            if (targetFilePath === imageFile.path) {
+              const start = section.position.start.offset + match.index;
+              const end = start + match[0].length;
+              imageLinksInSrcFile[imageLinksInSrcFile.length] = {
+                targetFilePath: targetFilePath,
+                displayName: displayName || "image",
+                start: start,
+                end: end,
+              };
+            }
+          });
+          wikiMatches.forEach(match => {
+            if (match.index === undefined) return;
+            const linktext = match[1];
+            const residual = match[2];
+            const {path, subpath} = parseLinktext(linktext);
+            const firstDest = this.app.metadataCache.getFirstLinkpathDest(path, sourceFilePath);
+            if (!firstDest) return;
+            const targetFilePath = firstDest.path;
+            if (targetFilePath === imageFile.path) {
+              const start = section.position.start.offset + match.index;
+              const end = start + match[0].length;
+              imageLinksInSrcFile[imageLinksInSrcFile.length] = {
+                targetFilePath: targetFilePath,
+                displayName: linktext + (residual || ""),
+                start: start,
+                end: end,
+              };
+            }
+          });
+          // Must sort by start position to avoid overlap.
+          imageLinksInSrcFile.sort((a, b) => a.start - b.start);
+          for (var i = 0; i < imageLinksInSrcFile.length-1; i++){
+            if (imageLinksInSrcFile[i].end > imageLinksInSrcFile[i+1].start) {
+              new Notice(`Warning: image link overlap detected in ${sourceFilePath}. Task aborted.`);
+              return;
+            }
+          }
+          imageLinksInSrcFiles[sourceFilePath] = imageLinksInSrcFile;
+        }
+      }
+    } 
+    historyMessage += `\nFinding relevant notes for ${imageFiles.length} image file(s)... Done`;
+    // now imageLinksInSrcFiles contains all relevant image links in all files.
+
+    // 2. upload all image files, generate oldFile-newLink map
+    const imageList: Image[] = imageFiles.map(file => {return {path: file.path, name: file.name, source: `![${file.name}](${file.path})`, file: file};});
+    progressMessage = `Uploading ${imageList.length} image file(s), it may take a while...`;
+    progressNotice.setMessage(historyMessage + "\n" + progressMessage);
+    this.upload(imageList).then(async res => {
+      if (!res.success) {
+        new Notice("Upload error");
+        return;
+      }
+
+      let uploadUrlList = res.result;
+      historyMessage += `\nUploading ${imageList.length} image file(s), it may take a while... Done`;
+      progressNotice.setMessage(historyMessage);
+      // 3. replace all old links with new links
+      // 3.1 prepare link map
+      if (imageFiles.length !== uploadUrlList.length){
+        new Notice("Error: upload files is different of reciver files from api. Aborted.");
+        return;
+      }
+      const linkMap: Record<string, string> = {};
+      for (let i = 0; i < imageFiles.length; i++) {
+        const imageFile = imageFiles[i];
+        const uploadUrl = uploadUrlList[i];
+        linkMap[imageFile.path] = uploadUrl;
+      }
+      // 3.2 replace all links and apply to files
+      total = Object.keys(imageLinksInSrcFiles).length;
+      count = 0;
+      for (const sourceFilePath in imageLinksInSrcFiles) {
+        count += 1;
+        progressMessage = `Replacing links in ${sourceFilePath} (${count}/${total})...`;
+        progressNotice.setMessage(historyMessage + "\n" + progressMessage);
+        const imageLinks = imageLinksInSrcFiles[sourceFilePath];
+        const sourceFile = this.app.vault.getAbstractFileByPath(sourceFilePath);
+        if (!(sourceFile instanceof TFile)) continue;
+        const srcFileContent = await this.app.vault.read(sourceFile);
+        var newFileContent = "";
+        var ptr=0;
+        for (const imageLink of imageLinks) {
+          const {targetFilePath, displayName, start, end} = imageLink;
+          const uploadUrl = linkMap[targetFilePath];
+          if (!uploadUrl) {
+            continue;
+          } else {
+            newFileContent += srcFileContent.substring(ptr, start); // copy before image link
+            newFileContent += `![${displayName}](${uploadUrl})`;
+            ptr = end;
+          }
+        }
+        newFileContent += srcFileContent.substring(ptr); // copy after last image link
+        await this.app.vault.modify(sourceFile, newFileContent);
+      }
+      historyMessage += `\nReplacing links in ${Object.keys(imageLinksInSrcFiles).length} file(s)... Done`;
+      progressNotice.setMessage(historyMessage);
+      // 4. delete old files if necessary
+      if (this.settings.deleteSource){
+        progressMessage += `Deleting ${imageFiles.length} local image file(s), this may take a while...`;
+        progressNotice.setMessage(historyMessage+"\n"+progressMessage);
+        imageFiles.map(imageFile => this.app.fileManager.trashFile(imageFile));
+        historyMessage += `\nDeleting ${imageFiles.length} local image file(s), this may take a while... Done`;
+        progressNotice.setMessage(historyMessage);
+      }
+      sleep(5000).then(() => {
+        progressNotice.hide();
+      });
+    });
+  }
+
   filterFile(fileArray: Image[]) {
     const imageList: Image[] = [];
 
@@ -269,7 +501,7 @@ export default class imageAutoUploadPlugin extends Plugin {
   /**
    * 替换上传的图片
    */
-  replaceImage(imageList: Image[], uploadUrlList: string[]) {
+  replaceImage(imageList: Image[], uploadUrlList: string[]) { // replaceImageUrlsInActiveFile
     let content = this.helper.getValue();
 
     imageList.map(item => {
@@ -293,7 +525,7 @@ export default class imageAutoUploadPlugin extends Plugin {
   /**
    * 上传所有图片
    */
-  uploadAllFile() {
+  uploadAllFile() { // uploadAllImageFilesInActiveFile
     const activeFile = this.app.workspace.getActiveFile();
     const fileMap = arrayToObject(this.app.vault.getFiles(), "name");
     const filePathMap = arrayToObject(this.app.vault.getFiles(), "path");
@@ -416,11 +648,13 @@ export default class imageAutoUploadPlugin extends Plugin {
                 let res: any;
                 res = await this.uploadByClipboard(evt.clipboardData.files);
 
-                if (res.code !== 0) {
+                // if (res.code !== 0) {
+                if (!res.success) {
                   this.handleFailedUpload(editor, pasteId, res.msg);
                   return;
                 }
-                const url = res.data;
+                // const url = res.data;
+                const url = res.result[0];
 
                 return url;
               },
