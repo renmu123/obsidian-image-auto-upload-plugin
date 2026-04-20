@@ -74,14 +74,9 @@ export default class Helper {
     for (const match of matches) {
       const source = match[0];
 
-      let name = match[1];
-      let path = match[2];
-      if (name === undefined) {
-        name = match[3];
-      }
-      if (path === undefined) {
-        path = match[4];
-      }
+      // Regex has 3 alternatives with groups: 1,2 (angle bracket) | 3,4 (regular) | 5,6 (http)
+      const name = match[1] ?? match[3] ?? match[5] ?? "";
+      const path = match[2] ?? match[4] ?? match[6];
 
       fileArray.push({
         path: path,

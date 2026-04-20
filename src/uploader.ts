@@ -22,6 +22,10 @@ export class PicGoUploader {
   }
 
   async uploadFiles(fileList: Array<string>): Promise<any> {
+    console.log("[PicGoUploader] uploadFiles called with:", fileList);
+    console.log("[PicGoUploader] remoteServerMode:", this.settings.remoteServerMode);
+    console.log("[PicGoUploader] uploadServer:", this.settings.uploadServer);
+
     let response: any;
     let data: PicGoResponse;
 
@@ -29,9 +33,11 @@ export class PicGoUploader {
       const files = [];
       for (let i = 0; i < fileList.length; i++) {
         const file = fileList[i];
+        console.log("[PicGoUploader] Reading file:", file);
         const buffer: Buffer = await new Promise((resolve, reject) => {
           readFile(file, (err, data) => {
             if (err) {
+              console.error("[PicGoUploader] Failed to read file:", file, err);
               reject(err);
             }
             resolve(data);
@@ -40,9 +46,11 @@ export class PicGoUploader {
         const arrayBuffer = bufferToArrayBuffer(buffer);
         files.push(new File([arrayBuffer], file));
       }
+      console.log("[PicGoUploader] Uploading via FormData...");
       response = await this.uploadFileByData(files);
       data = await response.json();
     } else {
+      console.log("[PicGoUploader] Uploading via JSON body...");
       response = await requestUrl({
         url: this.settings.uploadServer,
         method: "POST",
@@ -51,6 +59,7 @@ export class PicGoUploader {
       });
       data = await response.json;
     }
+    console.log("[PicGoUploader] Response data:", data);
 
     // piclist
     if (data.fullResult) {
@@ -138,20 +147,26 @@ export class PicGoCoreUploader {
       .map(item => `"${item}"`)
       .join(" ")}`;
 
+    console.log("[PicGoCoreUploader] Executing command:", command);
+
     const res = await this.exec(command);
+    console.log("[PicGoCoreUploader] Command output:", res);
+
     const splitList = res.split("\n");
     const splitListLength = splitList.length;
 
     const data = splitList.splice(splitListLength - 1 - length, length);
+    console.log("[PicGoCoreUploader] Extracted URLs:", data);
 
     if (res.includes("PicGo ERROR")) {
-      console.log(command, res);
+      console.error("[PicGoCoreUploader] Upload failed:", command, res);
 
       return {
         success: false,
         msg: "失败",
       };
     } else {
+      console.log("[PicGoCoreUploader] Upload success, result:", data);
       return {
         success: true,
         result: data,

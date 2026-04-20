@@ -236,7 +236,8 @@ export default class imageAutoUploadPlugin extends Plugin {
         let uploadUrlList = res.result;
         imageList.map(item => {
           const uploadImage = uploadUrlList.shift();
-          let name = this.handleName(item.name);
+          // Preserve original alt text for existing images
+          let name = item.name || this.handleName(item.name, uploadImage);
 
           content = content.replaceAll(
             item.source,
@@ -262,6 +263,9 @@ export default class imageAutoUploadPlugin extends Plugin {
     const imageList: Image[] = [];
 
     for (const match of fileArray) {
+      if (!match.path) {
+        continue;
+      }
       if (match.path.startsWith("http")) {
         if (this.settings.workOnNetWork) {
           if (
@@ -305,7 +309,10 @@ export default class imageAutoUploadPlugin extends Plugin {
     const fileMap = arrayToObject(this.app.vault.getFiles(), "name");
     const filePathMap = arrayToObject(this.app.vault.getFiles(), "path");
     let imageList: Image[] = [];
-    const fileArray = this.filterFile(this.helper.getAllFiles());
+    const allFiles = this.helper.getAllFiles();
+    console.log("[image-upload] Found image links in document:", allFiles);
+    const fileArray = this.filterFile(allFiles);
+    console.log("[image-upload] After filtering:", fileArray);
 
     for (const match of fileArray) {
       const imageName = match.name;
@@ -365,10 +372,16 @@ export default class imageAutoUploadPlugin extends Plugin {
               name: imageName,
               source: match.source,
             });
+          } else {
+            console.log("[image-upload] Skipped (not recognized as image):", abstractImageFile);
           }
+        } else {
+          console.log("[image-upload] File not found in vault:", encodedUri);
         }
       }
     }
+
+    console.log("[image-upload] Final image list to upload:", imageList);
 
     if (imageList.length === 0) {
       new Notice(t("Can not find image file"));
@@ -377,7 +390,9 @@ export default class imageAutoUploadPlugin extends Plugin {
       new Notice(`共找到${imageList.length}个图像文件，开始上传`);
     }
 
+    console.log("[image-upload] Starting upload...");
     this.uploader.uploadFiles(imageList.map(item => item.path)).then(res => {
+      console.log("[image-upload] Upload response:", res);
       if (res.success) {
         let uploadUrlList = res.result;
 
@@ -390,7 +405,8 @@ export default class imageAutoUploadPlugin extends Plugin {
         imageList.map(item => {
           const uploadImage = uploadUrlList.shift();
 
-          let name = this.handleName(item.name);
+          // Preserve original alt text for existing images
+          let name = item.name || this.handleName(item.name, uploadImage);
           content = content.replaceAll(
             item.source,
             `![${name}](${uploadImage})`
@@ -454,7 +470,8 @@ export default class imageAutoUploadPlugin extends Plugin {
                     let uploadUrlList = res.result;
                     imageList.map(item => {
                       const uploadImage = uploadUrlList.shift();
-                      let name = this.handleName(item.name);
+                      // Preserve original alt text for existing images
+                      let name = item.name || this.handleName(item.name, uploadImage);
 
                       value = value.replaceAll(
                         item.source,
@@ -594,7 +611,7 @@ export default class imageAutoUploadPlugin extends Plugin {
     name: string = ""
   ) {
     let progressText = imageAutoUploadPlugin.progressTextFor(pasteId);
-    name = this.handleName(name);
+    name = this.handleName(name, imageUrl);
 
     let markDownImage = `![${name}](${imageUrl})`;
 
@@ -616,7 +633,7 @@ export default class imageAutoUploadPlugin extends Plugin {
     );
   }
 
-  handleName(name: string) {
+  handleName(name: string, uploadUrl?: string) {
     const imageSizeSuffix = this.settings.imageSizeSuffix || "";
 
     if (this.settings.imageDesc === "origin") {
@@ -627,6 +644,28 @@ export default class imageAutoUploadPlugin extends Plugin {
       if (name === "image.png") {
         return "";
       } else {
+        return `${name}${imageSizeSuffix}`;
+      }
+    } else if (this.settings.imageDesc === "picgo-filename") {
+      // Extract filename from the PicGo response URL
+      // The response URL format is like: https://domain.com/20250425194301.png?params
+      if (uploadUrl) {
+        try {
+          // Get the URL path
+          const urlPath = uploadUrl.split('?')[0];
+          // Extract the filename with extension
+          const filenameWithExt = urlPath.split('/').pop() || '';
+          // Decode URL-encoded characters (especially for Chinese)
+          const decodedFilename = decodeURIComponent(filenameWithExt);
+          // Remove extension
+          const filenameWithoutExt = decodedFilename.replace(/\.[^/.]+$/, '');
+          return filenameWithoutExt + imageSizeSuffix;
+        } catch (e) {
+          console.error('Failed to extract filename from URL', e);
+          return `${name}${imageSizeSuffix}`;
+        }
+      } else {
+        // Fallback if uploadUrl is not provided
         return `${name}${imageSizeSuffix}`;
       }
     } else {

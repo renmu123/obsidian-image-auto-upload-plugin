@@ -46,6 +46,7 @@ export default {
   reserve: "default",
   "remove all": "none",
   "remove default": "remove image.png",
+  "use picgo url filename": "use filename from PicGo URL",
   "Remote server mode": "Remote server mode",
   "Remote server mode desc":
     "If you have deployed piclist-core or piclist on the server.",

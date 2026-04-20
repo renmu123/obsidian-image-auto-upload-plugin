@@ -1,0 +1,16 @@
+/* Image Auto Upload Plugin Styles */
+.img-upload-settings {
+  margin-bottom: 1rem;
+}
+
+.img-upload-setting-item {
+  padding: 10px 0;
+}
+
+.img-upload-error {
+  color: var(--text-error);
+}
+
+.img-upload-success {
+  color: var(--text-success);
+}

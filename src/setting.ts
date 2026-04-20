@@ -15,7 +15,7 @@ export interface PluginSettings {
   fixPath: boolean;
   applyImage: boolean;
   deleteSource: boolean;
-  imageDesc: "origin" | "none" | "removeDefault";
+  imageDesc: "origin" | "none" | "removeDefault" | "picgo-filename";
   remoteServerMode: boolean;
   [propName: string]: any;
 }
@@ -166,8 +166,9 @@ export class SettingTab extends PluginSettingTab {
           .addOption("origin", t("reserve")) // 保留全部
           .addOption("none", t("remove all")) // 移除全部
           .addOption("removeDefault", t("remove default")) // 只移除默认即 image.png
+          .addOption("picgo-filename", t("use picgo url filename")) // 使用 PicGo 返回的文件名
           .setValue(this.plugin.settings.imageDesc)
-          .onChange(async (value: "origin" | "none" | "removeDefault") => {
+          .onChange(async (value: "origin" | "none" | "removeDefault" | "picgo-filename") => {
             this.plugin.settings.imageDesc = value;
             this.display();
             await this.plugin.saveSettings();

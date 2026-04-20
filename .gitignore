@@ -10,4 +10,11 @@ node_modules
 main.js
 
 # ignore
-data.json
+data.jsondist
+dist
+
+# env
+.env
+
+# macOS
+.DS_Store

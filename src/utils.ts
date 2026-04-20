@@ -16,6 +16,7 @@ const IMAGE_EXT_LIST = [
   ".tiff",
   ".webp",
   ".avif",
+  ".heic",
 ];
 
 export function isAnImage(ext: string) {
