@@ -319,8 +319,11 @@ export default class imageAutoUploadPlugin extends Plugin {
           file = filePathMap[uri];
         }
 
-        // 相对路径
-        if ((!file && uri.startsWith("./")) || uri.startsWith("../")) {
+        // 相对路径：./xxx、../xxx 或裸子目录（如 __attachments__/foo.png）
+        // 只要不是 / 开头的绝对路径，都先尝试相对于当前文档目录解析；
+        // 命中后即可跳过下面的 basename 全 vault 搜索，避免把同名不同目录
+        // 的图片错误匹配。
+        if (!file && !uri.startsWith("/")) {
           const filePath = normalizePath(
             resolve(dirname(activeFile.path), uri)
           );
@@ -328,7 +331,7 @@ export default class imageAutoUploadPlugin extends Plugin {
           file = filePathMap[filePath];
         }
 
-        // 尽可能短路径
+        // 兜底：按 basename 搜整个 vault（可能匹配到同名但不同目录的文件）
         if (!file) {
           file = fileMap[fileName];
         }
