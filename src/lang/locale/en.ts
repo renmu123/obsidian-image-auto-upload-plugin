@@ -6,6 +6,9 @@ export default {
   "Auto pasted upload": "Auto pasted upload",
   "If you set this value true, when you paste image, it will be auto uploaded(you should set the picGo server rightly)":
     "If you set this value true, when you paste image, it will be auto uploaded(you should set the picGo server rightly)",
+  "Local preview while uploading": "Local preview while uploading",
+  "Local preview while uploading desc":
+    "Show the pasted image right away from a local copy and replace the link with the uploaded URL once the upload finishes. The local copy is removed after a successful upload.",
   "Default uploader": "Default uploader",
   "PicGo server": "PicGo server upload route",
   "PicGo server desc":

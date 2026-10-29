@@ -6,6 +6,9 @@ export default {
   "Auto pasted upload": "剪切板自动上传",
   "If you set this value true, when you paste image, it will be auto uploaded(you should set the picGo server rightly)":
     "启用该选项后，黏贴图片时会自动上传（你需要正确配置picgo）",
+  "Local preview while uploading": "上传时先显示本地副本",
+  "Local preview while uploading desc":
+    "粘贴后立即显示本地副本，上传完成后再把链接替换成图床地址；上传成功后会自动删除本地副本",
   "Default uploader": "默认上传器",
   "PicGo server": "PicGo server 上传接口",
   "PicGo server desc": "上传接口，使用PicList时可通过设置URL参数指定图床和配置",

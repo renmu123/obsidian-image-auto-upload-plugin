@@ -10,7 +10,7 @@ import {
   addIcon,
   MarkdownFileInfo,
 } from "obsidian";
-import { resolve, basename, dirname } from "path-browserify";
+import { resolve, basename, dirname, relative } from "path-browserify";
 
 import { isAssetTypeAnImage, arrayToObject } from "./utils";
 import { downloadAllImageFiles } from "./download";
@@ -410,23 +410,33 @@ export default class imageAutoUploadPlugin extends Plugin {
 
           // 剪贴板中是图片时进行上传
           if (this.canUpload(evt.clipboardData)) {
-            this.uploadFileAndEmbedImgurImage(
-              editor,
-              async (editor: Editor, pasteId: string) => {
-                let res: any;
-                res = await this.uploadByClipboard(evt.clipboardData.files);
-
-                if (res.code !== 0) {
-                  this.handleFailedUpload(editor, pasteId, res.msg);
-                  return;
-                }
-                const url = res.data;
-
-                return url;
-              },
-              evt.clipboardData
-            ).catch();
             evt.preventDefault();
+            if (this.settings.localPreview) {
+              this.pasteImageWithLocalPreview(
+                editor,
+                evt.clipboardData
+              ).catch(e => {
+                console.error(e);
+                new Notice(`Upload failed: ${e}`);
+              });
+            } else {
+              this.uploadFileAndEmbedImgurImage(
+                editor,
+                async (editor: Editor, pasteId: string) => {
+                  // 上传器返回 { success, msg, result }，结果在 result 里
+                  const res = await this.uploadByClipboard(
+                    evt.clipboardData.files
+                  );
+
+                  if (res.success === false) {
+                    this.handleFailedUpload(editor, pasteId, res.msg);
+                    return;
+                  }
+                  return Array.isArray(res.result) ? res.result[0] : res.result;
+                },
+                evt.clipboardData
+              ).catch();
+            }
           }
         }
       )
@@ -513,6 +523,92 @@ export default class imageAutoUploadPlugin extends Plugin {
     } catch (e) {
       this.handleFailedUpload(editor, pasteId, e);
     }
+  }
+
+  /**
+   * 粘贴图片时先写入本地副本并立刻展示，上传完成后再替换成远端链接
+   */
+  async pasteImageWithLocalPreview(
+    editor: Editor,
+    clipboardData: DataTransfer
+  ) {
+    const file = clipboardData.files[0];
+    let attachmentPath: string | null = null;
+
+    try {
+      attachmentPath = await this.writeClipboardImageToVault(file);
+    } catch (e) {
+      console.error("Failed to write local preview", e);
+    }
+
+    // 本地副本写不出来时，退回原来的占位符流程
+    if (!attachmentPath) {
+      return this.uploadFileAndEmbedImgurImage(
+        editor,
+        async (editor: Editor, pasteId: string) => {
+          const res = await this.uploadByClipboard(clipboardData.files);
+          if (res.success === false) {
+            this.handleFailedUpload(editor, pasteId, res.msg);
+            return;
+          }
+          return Array.isArray(res.result) ? res.result[0] : res.result;
+        },
+        clipboardData
+      );
+    }
+
+    const localLink = this.localImageLink(attachmentPath);
+    editor.replaceSelection(localLink + "\n");
+
+    const res = await this.uploadByClipboard(clipboardData.files);
+    if (res.success === false) {
+      new Notice(`Upload failed, local copy kept: ${res.msg}`);
+      return;
+    }
+    const url = Array.isArray(res.result) ? res.result[0] : res.result;
+
+    imageAutoUploadPlugin.replaceFirstOccurrence(
+      editor,
+      localLink,
+      `![${this.handleName(file.name)}](${url})`
+    );
+
+    // 链接已经被替换掉时才删除本地副本，避免留下坏链接
+    if (!editor.getValue().includes(localLink)) {
+      await this.app.vault.adapter.remove(attachmentPath);
+    }
+  }
+
+  private async writeClipboardImageToVault(file: File) {
+    const attachmentPath =
+      await this.app.fileManager.getAvailablePathForAttachment(file.name);
+    const folder = dirname(attachmentPath);
+
+    if (
+      folder &&
+      folder !== "." &&
+      !(await this.app.vault.adapter.exists(folder))
+    ) {
+      await this.app.vault.adapter.mkdir(folder);
+    }
+
+    await this.app.vault.adapter.writeBinary(
+      attachmentPath,
+      await file.arrayBuffer()
+    );
+
+    return attachmentPath;
+  }
+
+  private localImageLink(attachmentPath: string) {
+    const activeFile = this.app.workspace.getActiveFile();
+    const linkPath = activeFile
+      ? relative(dirname(activeFile.path), attachmentPath)
+      : attachmentPath;
+
+    return `![](${encodeURI(linkPath)
+      .replace(/#/g, "%23")
+      .replace(/\?/g, "%3F")})`;
   }
 
   insertTemporaryText(editor: Editor, pasteId: string) {

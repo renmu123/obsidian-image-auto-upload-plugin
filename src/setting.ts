@@ -4,6 +4,7 @@ import { t } from "./lang/helpers";
 
 export interface PluginSettings {
   uploadByClipSwitch: boolean;
+  localPreview: boolean;
   uploadServer: string;
   deleteServer: string;
   imageSizeSuffix: string;
@@ -20,6 +21,7 @@ export interface PluginSettings {
 
 export const DEFAULT_SETTINGS: PluginSettings = {
   uploadByClipSwitch: true,
+  localPreview: false,
   uploader: "PicGo",
   uploadServer: "http://127.0.0.1:36677/upload",
   deleteServer: "http://127.0.0.1:36677/delete",
@@ -58,6 +60,18 @@ export class SettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.uploadByClipSwitch)
           .onChange(async value => {
             this.plugin.settings.uploadByClipSwitch = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName(t("Local preview while uploading"))
+      .setDesc(t("Local preview while uploading desc"))
+      .addToggle(toggle =>
+        toggle
+          .setValue(this.plugin.settings.localPreview)
+          .onChange(async value => {
+            this.plugin.settings.localPreview = value;
             await this.plugin.saveSettings();
           })
       );
